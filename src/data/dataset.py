@@ -7,13 +7,14 @@ from tqdm import tqdm
 
 
 #ToDo: Replace remote_url with custom args to download specific (one or multiple) files or all files
-# But rn still a bit unclear what we need so i didnt implement it
+# But rn still a bit unclear what we need so i didnt implement it yet
 def download_dataset(remote_url):
 
-    #construct paths
+    #Construct paths
+    file_name = remote_url.rsplit("/", 1)[-1]
     proj_path = Path(__file__).resolve().parents[2]
     data_path = Path.joinpath(proj_path, "data")
-    file_path =  Path.joinpath(data_path, "queries.tar.gz")
+    file_path =  Path.joinpath(data_path, file_name)
 
     #Get Data and Save on disk (streaming bc large filesizes, so we don't run out of memory)
     print("Start Downloading Data")
@@ -39,12 +40,13 @@ def download_dataset(remote_url):
     if (file_path.name.endswith(".tar.gz")):
         print("start unzipping .tar.gz file")
         with tarfile.open(file_path) as tar:
-            tar.extractall(path= data_path)
+            tar.extractall(path=data_path)
         print("unzipping successful")
 
     elif (file_path.name.endswith(".gz")):
         print("start unzipping .gz file")
         with gzip.open(file_path, "rb") as f_in:         
-            with open(Path.joinpath(data_path, "testname"), "wb") as f_out:
+            with open(Path.joinpath(data_path, file_name[:-3]), "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
         print("unzipping successful")        
+
