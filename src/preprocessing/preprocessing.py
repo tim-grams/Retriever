@@ -1,19 +1,20 @@
+import string
+
 import pandas as pd
 import numpy as np
-import string
+
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.stem.porter import PorterStemmer
-#from trectools import TrecQrel
-#import trec_car.read_data
+
 
 class Preprocessor(object):
    
-    def do_removal(texts):
+    def do_removal(self, texts):
         '''
         Parameters:
-        texts: contains 2-dimensional list with texts of all documents
+        texts: contains a list with texts of all documents
 
         returns:
         2-dimensional list with texts of all documents where
@@ -26,19 +27,19 @@ class Preprocessor(object):
         nltk.download('punkt')
         nltk.download('stopwords')
 
-        all_texts_tokenized = [nltk.word_tokenize(t.lower()) for t in texts]
-        all_texts_punct_removed = [[w.translate(str.maketrans('', '', string.punctuation)) for w in t] for t in all_texts_tokenized]
+        all_texts_tokenized = np.array([nltk.word_tokenize(t.lower()) for t in texts], dtype=object)
+        all_texts_punct_removed = np.array([np.array([w.translate(str.maketrans('', '', string.punctuation)) for w in t]) for t in all_texts_tokenized], dtype=object)
 
         stopword = set(stopwords.words("english"))
-        all_texts_stopwords_removed = [[w for w in t if w not in stopword and w != ''] for t in all_texts_punct_removed] # and not w.isdigit()
+        all_texts_stopwords_removed = np.array([np.array([w for w in t if w not in stopword and w != '']) for t in all_texts_punct_removed], dtype=object) # and not w.isdigit()
 
         return all_texts_stopwords_removed
 
 
-    def do_stemm(all_texts):
+    def do_stemm(self, all_texts):
         '''
         parameters:
-        texts: contains 2-dimensional list with texts of all documents
+        texts: contains a 2-dimensional list with texts of all documents
 
         returns:
         2-dimensional list with texts of all documents where words have been stemmed
@@ -46,13 +47,13 @@ class Preprocessor(object):
 
         stemmer = PorterStemmer()
 
-        return [[stemmer.stem(w) for w in t] for t in all_texts]
+        return np.array([[stemmer.stem(w) for w in t] for t in all_texts])
 
 
-    def do_lemma(all_texts):
+    def do_lemma(self, all_texts):
         '''
         parameters:
-        texts: contains 2-dimensional list with texts of all documents
+        texts: contains a 2-dimensional list with texts of all documents
 
         returns:
         2-dimensional list with texts of all documents where words have been lemmatized
@@ -63,10 +64,10 @@ class Preprocessor(object):
         lemmatizer = WordNetLemmatizer()
         nltk.download('wordnet')
 
-        return [[lemmatizer.lemmatize(w) for w in t] for t in all_texts]
+        return np.array([[lemmatizer.lemmatize(w) for w in t] for t in all_texts])
 
 
-    def do_deriv_norm(all_texts):
+    def do_deriv_norm(self, all_texts):
         '''
         parameters:
         texts: contains 2-dimensional list with texts of all documents
@@ -75,3 +76,21 @@ class Preprocessor(object):
         '''
 
         return "Not implemented"
+
+
+    def preprocess(self, all_texts, norm_type):
+        '''
+        parameters:
+        deriv_type: "stem", "lemma" (and "norm") that indicate which normalization type to use
+
+        returns: preprocessed documents that are now in two-dimensional arrays
+        '''
+
+        removed_texts = self.do_removal(all_texts)
+        
+        if (norm_type == "stem"):
+            return self.do_stemm(removed_texts)
+        elif (norm_type == "lemma"):
+            return self.do_lemma(removed_texts)
+        #elif (norm_type == "norm"):
+        #    return self.do_deriv_norm(removed_texts)
