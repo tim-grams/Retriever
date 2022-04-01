@@ -4,11 +4,14 @@ import gzip
 import shutil
 from pathlib import Path
 from tqdm import tqdm
+import pandas as pd
 
+def download_dataset(datasets="all"):
 
-#ToDo: Replace remote_url with custom args to download specific (one or multiple) files or all files
-# But rn still a bit unclear what we need so i didnt implement it yet
-def download_dataset(remote_url):
+    if datasets == "all":
+        remote_url = "https://msmarco.blob.core.windows.net/msmarcoranking/collectionandqueries.tar.gz"
+    if datasets == "queries":
+        remote_url = "https://msmarco.blob.core.windows.net/msmarcoranking/queries.tar.gz"
 
     #Construct paths
     file_name = remote_url.rsplit("/", 1)[-1]
@@ -49,4 +52,57 @@ def download_dataset(remote_url):
             with open(Path.joinpath(data_path, file_name[:-3]), "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
         print("unzipping successful")        
+
+def import_queries(filepath=""):
+    if filepath == "":
+        proj_path = Path(__file__).resolve().parents[2]
+        filepath = Path.joinpath(proj_path, "data\queries.dev.tsv")
+        if not Path.is_file(filepath):
+            download_dataset("queries")
+    
+    colnames = ["qID" , "Query"]
+    df = pd.read_csv(filepath , sep="\t", names=colnames, header=None)
+    return df
+
+def import_collection(filepath=""):
+    
+    if filepath == "":
+        proj_path = Path(__file__).resolve().parents[2]
+        filepath = Path.joinpath(proj_path, "data\queries.dev.tsv")
+        if not Path.is_file(filepath):
+            print("File not there, downloading a new one")
+            download_dataset()
+    
+    colnames = ["pID" , "Passage"]
+    df = pd.read_csv(filepath , sep="\t", names=colnames, header=None)  
+    return df
+
+
+"""def import_queries(filepath, linecount):
+
+    #size = Path(filepath).stat().st_size
+    #print(size)
+    #targetsize = size*(outputpercent/100)     
+    #print(targetsize)
+
+    datalist = list() # List of tuple(index, query)
+    querylist = list() # list of only queries as strings
+    with open(filepath) as tsvfile:
+        csvreader = csv.reader(tsvfile, delimiter="\t")
+        for line in csvreader:        
+            #querylist.append(line[1])
+            datalist.append((int(line[0]), line[1]))
+            if len(datalist) >= linecount or len(querylist) >= linecount: 
+                break
+
+
+    #query_df = pd.DataFrame (querylist, columns=["Passage"])
+    query_df = pd.DataFrame (datalist, columns=[ "Pid" , "Passage" ])
+    return query_df"""
+
+
+    
+
+
+
 
