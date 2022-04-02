@@ -1,12 +1,13 @@
 import logging
 import argparse
-from src.data.dataset import download_dataset
+from src.pipeline import Pipeline
 
 LOGGER = logging.getLogger('cli')
 
 
 def _download_data(args):
-    download_dataset(args.datasets)
+    pipeline = Pipeline()
+    pipeline.download_and_import()
 
 
 def _get_parser():
