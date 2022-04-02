@@ -7,7 +7,7 @@ LOGGER = logging.getLogger('cli')
 
 def _download_data(args):
     pipeline = Pipeline()
-    pipeline.download_and_import()
+    pipeline.download()
 
 
 def _get_parser():

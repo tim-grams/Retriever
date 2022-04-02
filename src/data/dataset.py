@@ -93,28 +93,3 @@ def import_collection(filepath: str = "data/TREC_Passage/collection.tsv",
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
     df.to_pickle(dataframe_path)
     return df
-
-
-"""
-def import_queries(filepath, linecount):
-
-#size = Path(filepath).stat().st_size
-#print(size)
-#targetsize = size*(outputpercent/100)     
-#print(targetsize)
-
-datalist = list() # List of tuple(index, query)
-querylist = list() # list of only queries as strings
-with open(filepath) as tsvfile:
-    csvreader = csv.reader(tsvfile, delimiter="\t")
-    for line in csvreader:        
-        #querylist.append(line[1])
-        datalist.append((int(line[0]), line[1]))
-        if len(datalist) >= linecount or len(querylist) >= linecount: 
-            break
-
-
-#query_df = pd.DataFrame (querylist, columns=["Passage"])
-query_df = pd.DataFrame (datalist, columns=[ "Pid" , "Passage" ])
-return query_df
-"""
