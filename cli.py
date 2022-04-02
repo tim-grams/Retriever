@@ -1,11 +1,12 @@
 import logging
 import argparse
+from src.data.dataset import download_dataset
 
 LOGGER = logging.getLogger('cli')
 
 
 def _download_data(args):
-    LOGGER.info('Download of data started')
+    download_dataset(args.datasets)
 
 
 def _get_parser():
@@ -16,13 +17,13 @@ def _get_parser():
     logging_args = argparse.ArgumentParser(add_help=False)
     logging_args.add_argument('-v', '--verbose', action='count', default=0)
     logging_args.add_argument('-l', '--logfile')
-    parser = argparse.ArgumentParser(description='Face-Hunter Command Line Interface',
+    parser = argparse.ArgumentParser(description='Retrieval Command Line Interface',
                                      parents=[logging_args])
     subparsers = parser.add_subparsers(title='action', help='Action to perform')
 
     # Parser to search for videos with an entity
     data_download = subparsers.add_parser('download', help='Downloads the specified dataset in the /data/ folder')
-    data_download.add_argument('--dataset', help='Name of the dataset', type=str, default=None)
+    data_download.add_argument('--datasets', help='Can be all or queries', type=str, default='all')
     data_download.set_defaults(action=_download_data)
 
     return parser
