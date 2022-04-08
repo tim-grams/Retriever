@@ -42,7 +42,7 @@ class Pipeline(object):
         if 'queries.train.tsv' in datasets:
             self.queries = import_queries(path)
         if 'qrels.train.tsv' in datasets:
-            self.features['qId'], self.features['pID'] = import_qrels(path)
+            self.features['qId'], self.features['pID'] = import_qrels(path, list(self.collection['pID']))
 
         self.save()
 
