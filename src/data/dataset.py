@@ -76,7 +76,7 @@ def unzip(file: str = None):
         LOGGER.info("unzipping successful")
 
 
-def import_queries(path: str = "data/TREC_Passage"):
+def import_queries(path: str = "data/TREC_Passage", queries: list = None):
     filepath = os.path.join(path, 'queries.train.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -84,6 +84,8 @@ def import_queries(path: str = "data/TREC_Passage"):
 
     col_names = ["qID", "Query"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
+    if queries is not None:
+        df = df[df['qID'].isin(queries)]
     return df
 
 
@@ -107,5 +109,6 @@ def import_qrels(path: str = "data/TREC_Passage", collections: list = None):
 
     col_names = ["qID", "0", "pID", "feedback"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
-    df = df[df['pID'].isin(collections)]
+    if collections is not None:
+        df = df[df['pID'].isin(collections)]
     return df['qID'], df['pID']
