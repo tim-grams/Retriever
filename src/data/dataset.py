@@ -7,6 +7,7 @@ import pandas as pd
 import logging
 import os
 from src.utils.utils import check_path_exists
+import dask.dataframe as dd
 
 LOGGER = logging.getLogger('cli')
 
@@ -83,7 +84,8 @@ def import_queries(path: str = "data/TREC_Passage"):
         download_dataset(["queries.train.tsv"], path)
 
     col_names = ["qID", "Query"]
-    df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
+    df = dd.read_csv(filepath, blocksize=50e6, sep="\t", names=col_names, header=None)
+    # df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
     return df
 
 
@@ -94,7 +96,8 @@ def import_collection(path: str = "data/TREC_Passage"):
         download_dataset(['collection.tsv'], path)
 
     col_names = ["pID", "Passage"]
-    df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
+    df = dd.read_csv(filepath, blocksize=50e6, sep="\t", names=col_names, header=None)
+    # df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
     return df
 
 
@@ -105,5 +108,6 @@ def import_qrels(path: str = "data/TREC_Passage"):
         download_dataset(['qrels.train.tsv'], path)
 
     col_names = ["qID", "0", "pID", "feedback"]
-    df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
+    df = dd.read_csv(filepath, blocksize=50e6, sep="\t", names=col_names, header=None)
+    # df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
     return df['qID'], df['pID']
