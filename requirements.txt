@@ -4,3 +4,4 @@ requests
 numpy
 nltk
 scikit-learn
+textblob
