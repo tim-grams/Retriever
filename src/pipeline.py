@@ -5,7 +5,7 @@ from src.preprocessing.preprocessing import tokenization, removal, stemming
 import numpy as np
 import logging
 from src.embeddings.tfidf import TFIDF
-from src.features.metrics import cosine_similarity_score
+from src.features.metrics import cosine_similarity_score, euclidean_distance_score, manhattan_distance_score, jaccard
 from src.utils.utils import load
 import os
 from src.utils.utils import check_path_exists
@@ -44,7 +44,6 @@ class Pipeline(object):
         if 'queries.train.tsv' in datasets:
             self.queries = import_queries(path, list(self.features['qID']))
 
-
         self.save()
 
     def preprocess(self):
@@ -69,13 +68,13 @@ class Pipeline(object):
         assert self.preprocessed, "Preprocess the data first"
 
         tfidf = TFIDF()
-        self.collection['tfidf_embedding'] = tfidf.fit(
+        self.collection['tfidf'] = tfidf.fit(
             self.collection['preprocessed']
         ).transform(
             self.collection['preprocessed'],
-            "data/embeddings/tfidf_embeddings.pkl")[0]
-        self.queries['tfidf_embedding'] = tfidf.transform(self.queries['preprocessed'],
-                                                          'data/embeddings/tfidf_embeddings_queries.pkl')
+            "data/embeddings/tfidf_embeddings.pkl")
+        self.queries['tfidf'] = tfidf.transform(self.queries['preprocessed'],
+                                                'data/embeddings/tfidf_embeddings_queries.pkl')
 
         self.save()
 
@@ -83,9 +82,43 @@ class Pipeline(object):
         embeddings = load(os.path.join(path, 'tfidf_embeddings.pkl'))
         embeddings_queries = load(os.path.join(path, 'tfidf_embeddings_queries.pkl'))
 
-        self.features['tfidf'] = self.features.progress_apply(lambda qrel:
-                                                              cosine_similarity_score(embeddings_queries[qrel.qID],
-                                                                                      embeddings[qrel.pID]))
+        self.features['tfidf_cosine'] = self.features.progress_apply(lambda qrel:
+                                                                     cosine_similarity_score(embeddings_queries[
+                                                                                                 self.queries[
+                                                                                                     self.queries[
+                                                                                                         'qID'] == qrel.qID].index],
+                                                                                             embeddings[self.collection[
+                                                                                                 self.collection[
+                                                                                                     'pID'] == qrel.pID].index]),
+                                                                     axis=1)
+        self.features['tfidf_euclidean'] = self.features.progress_apply(lambda qrel:
+                                                                        euclidean_distance_score(embeddings_queries[
+                                                                                                     self.queries[
+                                                                                                         self.queries[
+                                                                                                             'qID'] == qrel.qID].index],
+                                                                                                 embeddings[
+                                                                                                     self.collection[
+                                                                                                         self.collection[
+                                                                                                             'pID'] == qrel.pID].index]),
+                                                                        axis=1)
+        self.features['tfidf_manhattan'] = self.features.progress_apply(lambda qrel:
+                                                                        manhattan_distance_score(embeddings_queries[
+                                                                                                     self.queries[
+                                                                                                         self.queries[
+                                                                                                             'qID'] == qrel.qID].index],
+                                                                                                 embeddings[
+                                                                                                     self.collection[
+                                                                                                         self.collection[
+                                                                                                             'pID'] == qrel.pID].index]),
+                                                                        axis=1)
+
+        self.save()
+
+    def create_jaccard_feature(self):
+        self.features['jaccard'] = self.features.progress_apply(
+            lambda qrel: jaccard(self.collection[self.collection['pID'] == qrel['pID']]['preprocessed'].iloc[0],
+                                 self.queries[self.queries['qID'] == qrel['qID']]['preprocessed'].iloc[0]),
+            axis=1)
 
         self.save()
 

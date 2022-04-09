@@ -1,6 +1,6 @@
 import os
 import logging
-import pickle
+import dill as pickle
 
 LOGGER = logging.getLogger('utils')
 
@@ -17,7 +17,8 @@ def check_path_exists(path: str = None):
 
 
 def save(obj: object, path: str):
-    pickle.dump(obj, open(path, "wb"))
+    with open(path, 'wb') as fin:
+        pickle.dump(obj, fin)
     return path
 
 

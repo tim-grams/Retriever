@@ -85,7 +85,7 @@ def import_queries(path: str = "data/TREC_Passage", queries: list = None):
     col_names = ["qID", "Query"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
     if queries is not None:
-        df = df[df['qID'].isin(queries)]
+        df = df[df['qID'].isin(queries)].reset_index(drop=True)
     return df
 
 
@@ -97,7 +97,7 @@ def import_collection(path: str = "data/TREC_Passage", samples: int = 25000):
 
     col_names = ["pID", "Passage"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
-    df = df.sample(samples, random_state=42)
+    df = df.sample(samples, random_state=42).reset_index(drop=True)
     return df
 
 
@@ -110,5 +110,5 @@ def import_qrels(path: str = "data/TREC_Passage", collections: list = None):
     col_names = ["qID", "0", "pID", "feedback"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
     if collections is not None:
-        df = df[df['pID'].isin(collections)]
+        df = df[df['pID'].isin(collections)].reset_index(drop=True)
     return df['qID'], df['pID']
