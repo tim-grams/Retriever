@@ -1,5 +1,5 @@
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances, manhattan_distances
-from src.preprocessing.preprocessing import tokenization
+from src.data.preprocessing import tokenization
 import nltk
 from textblob import TextBlob
 import numpy as np

@@ -1,11 +1,11 @@
 from src.data.dataset import download_dataset, import_queries, import_collection, import_qrels
 import pandas as pd
 from tqdm import tqdm
-from src.preprocessing.preprocessing import tokenization, removal, stemming
+from src.data.preprocessing import tokenization, removal, stemming
 import numpy as np
 import logging
 from src.embeddings.tfidf import TFIDF
-from src.features.metrics import cosine_similarity_score, euclidean_distance_score, manhattan_distance_score, jaccard, \
+from src.features.features import cosine_similarity_score, euclidean_distance_score, manhattan_distance_score, jaccard, \
     words, relative_difference, characters, difference, subjectivity, polarisation, POS
 from src.utils.utils import load
 import os
