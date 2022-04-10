@@ -5,10 +5,12 @@ from src.preprocessing.preprocessing import tokenization, removal, stemming
 import numpy as np
 import logging
 from src.embeddings.tfidf import TFIDF
-from src.features.metrics import cosine_similarity_score, euclidean_distance_score, manhattan_distance_score, jaccard
+from src.features.metrics import cosine_similarity_score, euclidean_distance_score, manhattan_distance_score, jaccard, \
+    words, relative_difference, characters, difference, subjectivity, polarisation, POS
 from src.utils.utils import load
 import os
 from src.utils.utils import check_path_exists
+import time
 
 tqdm.pandas()
 LOGGER = logging.getLogger('pipeline')
@@ -44,7 +46,7 @@ class Pipeline(object):
         if 'queries.train.tsv' in datasets:
             self.queries = import_queries(path, list(self.features['qID']))
 
-        self.save()
+        return self.save()
 
     def preprocess(self):
         LOGGER.info('Preprocessing collection')
@@ -62,7 +64,7 @@ class Pipeline(object):
                 ))))
         self.preprocessed = True
 
-        self.save()
+        return self.save()
 
     def create_tfidf_embeddings(self):
         assert self.preprocessed, "Preprocess the data first"
@@ -76,7 +78,7 @@ class Pipeline(object):
         self.queries['tfidf'] = tfidf.transform(self.queries['preprocessed'],
                                                 'data/embeddings/tfidf_embeddings_queries.pkl')
 
-        self.save()
+        return self.save()
 
     def create_tfidf_feature(self, path: str = 'data/embeddings'):
         embeddings = load(os.path.join(path, 'tfidf_embeddings.pkl'))
@@ -112,7 +114,7 @@ class Pipeline(object):
                                                                                                              'pID'] == qrel.pID].index]),
                                                                         axis=1)
 
-        self.save()
+        return self.save()
 
     def create_jaccard_feature(self):
         self.features['jaccard'] = self.features.progress_apply(
@@ -120,10 +122,74 @@ class Pipeline(object):
                                  self.queries[self.queries['qID'] == qrel['qID']]['preprocessed'].iloc[0]),
             axis=1)
 
-        self.save()
+        return self.save()
+
+    def create_sentence_features(self):
+        self.features['words_doc'] = self.features.progress_apply(
+            lambda qrel: words(self.collection[self.collection['pID'] == qrel['pID']]['Passage'].iloc[0]),
+            axis=1)
+        self.features['words_query'] = self.features.progress_apply(
+            lambda qrel: words(self.queries[self.queries['qID'] == qrel['qID']]['Query'].iloc[0]),
+            axis=1)
+        self.features['words_difference'] = self.features.progress_apply(
+            lambda qrel: difference(qrel['words_doc'], qrel['words_query']),
+            axis=1)
+        self.features['words_rel_difference'] = self.features.progress_apply(
+            lambda qrel: relative_difference(qrel['words_doc'], qrel['words_query']),
+            axis=1)
+
+        self.features['char_doc'] = self.features.progress_apply(
+            lambda qrel: characters(self.collection[self.collection['pID'] == qrel['pID']]['Passage'].iloc[0]),
+            axis=1)
+        self.features['char_query'] = self.features.progress_apply(
+            lambda qrel: characters(self.queries[self.queries['qID'] == qrel['qID']]['Query'].iloc[0]),
+            axis=1)
+        self.features['char_difference'] = self.features.progress_apply(
+            lambda qrel: difference(qrel['char_doc'], qrel['char_query']),
+            axis=1)
+        self.features['char_rel_difference'] = self.features.progress_apply(
+            lambda qrel: relative_difference(qrel['char_doc'], qrel['char_query']),
+            axis=1)
+
+        return self.save()
+
+    def create_interpretation_features(self):
+        self.features['subjectivity_doc'] = self.features.progress_apply(
+            lambda qrel: subjectivity(self.collection[self.collection['pID'] == qrel['pID']]['Passage'].iloc[0]),
+            axis=1)
+        self.features['polarity_doc'] = self.features.progress_apply(
+            lambda qrel: polarisation(self.collection[self.collection['pID'] == qrel['pID']]['Passage'].iloc[0]),
+            axis=1)
+
+        self.features['subjectivity_query'] = self.features.progress_apply(
+            lambda qrel: subjectivity(self.queries[self.queries['qID'] == qrel['qID']]['Query'].iloc[0]),
+            axis=1)
+        self.features['polarity_query'] = self.features.progress_apply(
+            lambda qrel: polarisation(self.queries[self.queries['qID'] == qrel['qID']]['Query'].iloc[0]),
+            axis=1)
+
+        return self.save()
+
+    def create_POS_features(self):
+        pos = self.features.progress_apply(
+            lambda qrel: POS(self.collection[self.collection['pID'] == qrel['pID']]['Passage'].iloc[0]),
+            axis=1)
+        self.features['doc_nouns'] = [tag[0] for tag in pos]
+        self.features['doc_adjectives'] = [tag[1] for tag in pos]
+        self.features['doc_verbs'] = [tag[2] for tag in pos]
+
+        pos = self.features.progress_apply(
+            lambda qrel: POS(self.queries[self.queries['qID'] == qrel['qID']]['Query'].iloc[0]),
+            axis=1)
+        self.features['query_nouns'] = [tag[0] for tag in pos]
+        self.features['query_adjectives'] = [tag[1] for tag in pos]
+        self.features['query_verbs'] = [tag[2] for tag in pos]
+
+        return self.save()
 
     def save(self, path: str = 'data/processed'):
         check_path_exists(path)
-        self.queries.to_pickle(os.path.join(path, '_'.join(self.queries.columns) + '.pkl'))
-        self.collection.to_pickle(os.path.join(path, '_'.join(self.collection.columns) + '.pkl'))
-        self.features.to_pickle(os.path.join(path, '_'.join(self.features.columns) + '.pkl'))
+        self.queries.to_pickle(os.path.join(path, 'queries' + str(time.time()) + '.pkl'))
+        self.collection.to_pickle(os.path.join(path, 'collection' + str(time.time()) + '.pkl'))
+        self.features.to_pickle(os.path.join(path, 'features' + str(time.time()) + '.pkl'))
+        return self
