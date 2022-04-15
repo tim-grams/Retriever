@@ -1,8 +1,8 @@
 from gensim.models import Word2Vec
 
 # Create word2vec embedding with preprocessed index terms occuring at least min_count times
-def create_word2vec(text, min_count):
-	return Word2Vec(text, min_count=min_count)
+def create_word2vec(list, min_count):
+	return Word2Vec(list, min_count=min_count)
 	
 # Create dict with unique words that exists at least min_count times	
 def word2vec_get_unique(w2v_object):
