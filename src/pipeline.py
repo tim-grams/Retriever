@@ -5,6 +5,7 @@ from src.preprocessing.preprocessing import tokenization, removal, stemming
 import numpy as np
 import logging
 from src.embeddings.tfidf import TFIDF
+from src.embeddings.elmo import Elmo
 
 tqdm.pandas()
 LOGGER = logging.getLogger('pipeline')
@@ -50,3 +51,9 @@ class Pipeline(object):
 
         tfidf = TFIDF()
         self.collection['tfidf_embedding'] = tfidf.fit(self.collection.Passage).transform(self.collection.Passage)
+
+    def elmo(self):
+        if self.preprocessed is False:
+            self.preprocess()
+        elmo = Elmo()
+        self.collection['elmo_embedding'] = elmo.fit_transform(self.collection.Passage)
