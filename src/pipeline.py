@@ -5,6 +5,7 @@ from src.data.preprocessing import tokenization, removal, stemming
 import numpy as np
 import logging
 from src.embeddings.tfidf import TFIDF
+from src.embeddings.glove import Glove
 from src.features.features import cosine_similarity_score, euclidean_distance_score, manhattan_distance_score, jaccard, \
     words, relative_difference, characters, difference, subjectivity, polarisation, POS
 from src.utils.utils import load
@@ -77,6 +78,18 @@ class Pipeline(object):
             "data/embeddings/tfidf_embeddings.pkl")
         self.queries['tfidf'] = tfidf.transform(self.queries['preprocessed'],
                                                 'data/embeddings/tfidf_embeddings_queries.pkl')
+
+        return self.save()
+
+    def create_glove_embeddings(self):
+        assert self.preprocessed, "Preprocess the data first"
+
+        glove = Glove()
+        self.collection['glove'] = glove.transform(
+            self.collection['preprocessed'],
+            "data/embeddings/glove_embeddings")
+        self.queries['glove'] = glove.transform(self.queries['preprocessed'],
+                                                'data/embeddings/glove_embeddings_queries')
 
         return self.save()
 
