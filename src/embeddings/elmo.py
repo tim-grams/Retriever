@@ -22,3 +22,4 @@ class Elmo(object):
                 dict_emb[token] = token.embedding
             elmo_list.append(dict_emb)
         return np.array(elmo_list)
+    
