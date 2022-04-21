@@ -98,6 +98,42 @@ class Pipeline(object):
     def create_bert_feature():
         pass
 
+    def create_bert_feature(self, path: str = 'data/embeddings'):
+        embeddings = load(os.path.join(path, 'bert_embeddings.pkl'))
+        embeddings_queries = load(os.path.join(path, 'bert_embeddings_queries.pkl'))
+
+        self.features['bert_cosine'] = self.features.progress_apply(lambda qrel:
+                                                                     cosine_similarity_score(embeddings_queries[
+                                                                                                 self.queries[
+                                                                                                     self.queries[
+                                                                                                         'qID'] == qrel.qID].index],
+                                                                                             embeddings[self.collection[
+                                                                                                 self.collection[
+                                                                                                     'pID'] == qrel.pID].index]),
+                                                                     axis=1)
+        self.features['bert_euclidean'] = self.features.progress_apply(lambda qrel:
+                                                                        euclidean_distance_score(embeddings_queries[
+                                                                                                     self.queries[
+                                                                                                         self.queries[
+                                                                                                             'qID'] == qrel.qID].index],
+                                                                                                 embeddings[
+                                                                                                     self.collection[
+                                                                                                         self.collection[
+                                                                                                             'pID'] == qrel.pID].index]),
+                                                                        axis=1)
+        self.features['bert_manhattan'] = self.features.progress_apply(lambda qrel:
+                                                                        manhattan_distance_score(embeddings_queries[
+                                                                                                     self.queries[
+                                                                                                         self.queries[
+                                                                                                             'qID'] == qrel.qID].index],
+                                                                                                 embeddings[
+                                                                                                     self.collection[
+                                                                                                         self.collection[
+                                                                                                             'pID'] == qrel.pID].index]),
+                                                                        axis=1)
+
+        return self.save()
+
     def create_tfidf_feature(self, path: str = 'data/embeddings'):
         embeddings = load(os.path.join(path, 'tfidf_embeddings.pkl'))
         embeddings_queries = load(os.path.join(path, 'tfidf_embeddings_queries.pkl'))
