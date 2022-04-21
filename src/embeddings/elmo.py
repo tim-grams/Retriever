@@ -1,8 +1,9 @@
 from flair.embeddings import ELMoEmbeddings
 from flair.data import Sentence
+from nltk.tokenize.treebank import TreebankWordDetokenizer
 from tqdm import tqdm
 import numpy as np
-from nltk.tokenize.treebank import TreebankWordDetokenizer
+import torch
 
 
 class Elmo(object):
@@ -10,15 +11,16 @@ class Elmo(object):
         # init embedding
         self.embedding = ELMoEmbeddings()
 
-    def fit_transform(self, X):
+    def transform(self, X):
 
         elmo_list = []
         for line in tqdm(X):
-            dict_emb = {}
             detokenized = TreebankWordDetokenizer().detokenize(line)
             sentence = Sentence(detokenized)
             self.embedding.embed(sentence)
+            input = torch.empty(sentence[0].embedding.size())
+            tokens_per_sentence = torch.zeros_like(input)
             for token in sentence:
-                dict_emb[token] = token.embedding
-            elmo_list.append(dict_emb)
+                tokens_per_sentence = torch.add(tokens_per_sentence, token.embedding)
+            elmo_list.append(tokens_per_sentence)
         return np.array(elmo_list)
