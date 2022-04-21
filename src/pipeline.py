@@ -5,6 +5,7 @@ from src.data.preprocessing import tokenization, removal, stemming
 import numpy as np
 import logging
 from src.embeddings.tfidf import TFIDF
+from src.embeddings.bert import Bert
 from src.features.features import cosine_similarity_score, euclidean_distance_score, manhattan_distance_score, jaccard, \
     words, relative_difference, characters, difference, subjectivity, polarisation, POS
 from src.utils.utils import load
@@ -66,6 +67,8 @@ class Pipeline(object):
 
         return self.save()
 
+
+    
     def create_tfidf_embeddings(self):
         assert self.preprocessed, "Preprocess the data first"
 
@@ -79,6 +82,21 @@ class Pipeline(object):
                                                 'data/embeddings/tfidf_embeddings_queries.pkl')
 
         return self.save()
+
+
+    def create_bert_embeddings(self):
+        bert = Bert()
+        self.collection['bert'] = bert.transform(
+            self.collection['Passage'],
+            "data/embeddings/bert_embeddings.pk1")
+        self.queries['bert'] = bert.transform(
+            self.queries['Query'],
+            "data/embeddings/bert_embeddings_queries.pk1")
+
+        return self.save()
+
+    def create_bert_feature():
+        pass
 
     def create_tfidf_feature(self, path: str = 'data/embeddings'):
         embeddings = load(os.path.join(path, 'tfidf_embeddings.pkl'))
