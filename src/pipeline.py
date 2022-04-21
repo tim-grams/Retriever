@@ -87,9 +87,9 @@ class Pipeline(object):
         glove = Glove()
         self.collection['glove'] = glove.transform(
             self.collection['preprocessed'],
-            "data/embeddings/glove_embeddings")
+            "data/embeddings/glove_embeddings.pkl")
         self.queries['glove'] = glove.transform(self.queries['preprocessed'],
-                                                'data/embeddings/glove_embeddings_queries')
+                                                'data/embeddings/glove_embeddings_queries.pkl')
 
         return self.save()
 
@@ -117,6 +117,42 @@ class Pipeline(object):
                                                                                                              'pID'] == qrel.pID].index]),
                                                                         axis=1)
         self.features['tfidf_manhattan'] = self.features.progress_apply(lambda qrel:
+                                                                        manhattan_distance_score(embeddings_queries[
+                                                                                                     self.queries[
+                                                                                                         self.queries[
+                                                                                                             'qID'] == qrel.qID].index],
+                                                                                                 embeddings[
+                                                                                                     self.collection[
+                                                                                                         self.collection[
+                                                                                                             'pID'] == qrel.pID].index]),
+                                                                        axis=1)
+
+        return self.save()
+
+    def create_glove_feature(self, path: str = 'data/embeddings'):
+        embeddings = np.array(load(os.path.join(path, 'glove_embeddings.pkl')))
+        embeddings_queries = np.array(load(os.path.join(path, 'glove_embeddings_queries.pkl')))
+
+        self.features['glove_cosine'] = self.features.progress_apply(lambda qrel:
+                                                                     cosine_similarity_score(embeddings_queries[
+                                                                                                 self.queries[
+                                                                                                     self.queries[
+                                                                                                         'qID'] == qrel.qID].index],
+                                                                                             embeddings[self.collection[
+                                                                                                 self.collection[
+                                                                                                     'pID'] == qrel.pID].index]),
+                                                                     axis=1)
+        self.features['glove_euclidean'] = self.features.progress_apply(lambda qrel:
+                                                                        euclidean_distance_score(embeddings_queries[
+                                                                                                     self.queries[
+                                                                                                         self.queries[
+                                                                                                             'qID'] == qrel.qID].index],
+                                                                                                 embeddings[
+                                                                                                     self.collection[
+                                                                                                         self.collection[
+                                                                                                             'pID'] == qrel.pID].index]),
+                                                                        axis=1)
+        self.features['glove_manhattan'] = self.features.progress_apply(lambda qrel:
                                                                         manhattan_distance_score(embeddings_queries[
                                                                                                      self.queries[
                                                                                                          self.queries[

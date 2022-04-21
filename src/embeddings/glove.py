@@ -5,7 +5,7 @@ import numpy as np
 from src.utils.utils import check_path_exists, save, load
 import os
 from tqdm import tqdm
-import h5py
+import torch
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 
 class Glove(object):
@@ -20,13 +20,22 @@ class Glove(object):
         glove_vec = []
 
         for line in tqdm(text_in_tokens):
-            glove_dict = {}
             detokenized = TreebankWordDetokenizer().detokenize(line)
             sentence = Sentence(detokenized)
             self.glove.embed(sentence)
+            input = torch.empty(sentence[0].embedding.size())
+            token_per_sentence = torch.zeros_like(input)
+            #input = np.empty(sentence[0].embedding.size())
+            #token_per_sentence = np.zeros(sentence[0].embedding.size())
 
             for token in sentence:
-                glove_dict[token] = token.embedding
-            glove_vec.append(glove_dict)
+                token_per_sentence = torch.add(token_per_sentence, token.embedding)
+            glove_vec.append(token_per_sentence.numpy())
 
-        return np.array(glove_vec)
+        #glove_vec = np.array(glove_vec, dtype="object")
+        
+        if store is not None:
+            check_path_exists(os.path.dirname(store))
+            save(glove_vec, store)
+
+        return glove_vec
