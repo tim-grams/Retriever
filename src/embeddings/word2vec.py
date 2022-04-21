@@ -1,5 +1,6 @@
 from gensim.models import Word2Vec
 from gensim.test.utils import common_texts
+import numpy as np
 
 class word2vec(object):
     
@@ -23,6 +24,13 @@ class word2vec(object):
         
         return self.embedding.wv.vectors
     
+       
+    # Additional Methods
+    def get_wv(self):
+        assert self.is_transform is not False, 'You need to use .transform() first'
+        
+        return self.embedding.wv
+    
     def get_key_vectors(self):
         assert self.is_transform is not False, 'You need to use .transform() first'
         
@@ -37,12 +45,7 @@ class word2vec(object):
         assert self.is_transform is not False, 'You need to use .transform() first'
         
         return np.array(self.embedding.wv[word])
-    
-    def get_wv(self):
-        assert self.is_transform is not False, 'You need to use .transform() first'
-        
-        return self.embedding.wv
-    
+   
     def get_similar(self, word):
         assert self.is_transform is not False, 'You need to use .transform() first'
         
