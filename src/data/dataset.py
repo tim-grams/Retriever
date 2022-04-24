@@ -17,7 +17,10 @@ def download_dataset(datasets: list = None, path: str = "data/TREC_Passage"):
     links = {
         'collection.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/collection.tar.gz",
         'queries.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/queries.tar.gz",
-        'qrels.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/qrels.train.tsv"
+        'qrels.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/qrels.train.tsv",
+        'qidpidtriples.train.full.2.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/qidpidtriples.train.full.2.tsv',
+        'msmarco-test2019-queries.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/msmarco-test2019-queries.tsv',
+        '2019qrels-pass.txt': 'https://msmarco.blob.core.windows.net/msmarcoranking/2019qrels-pass.txt'
     }
 
     check_path_exists(path)
@@ -86,10 +89,18 @@ def import_queries(path: str = "data/TREC_Passage", queries: list = None):
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
     if queries is not None:
         df = df[df['qID'].isin(queries)].reset_index(drop=True)
-    return df
+
+    filepath = os.path.join(path, 'msmarco-test2019-queries.tsv')
+    if not os.path.exists(filepath):
+        LOGGER.debug("File not there, downloading a new one")
+        download_dataset(["msmarco-test2019-queries.tsv"], path)
+
+    col_names = ["qID", "Query"]
+    test_df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
+    return df, test_df
 
 
-def import_collection(path: str = "data/TREC_Passage", samples: int = 25000):
+def import_collection(path: str = "data/TREC_Passage", samples: int = 5000):
     filepath = os.path.join(path, 'collection.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -101,14 +112,29 @@ def import_collection(path: str = "data/TREC_Passage", samples: int = 25000):
     return df
 
 
-def import_qrels(path: str = "data/TREC_Passage", collections: list = None):
-    filepath = os.path.join(path, 'qrels.train.tsv')
+def import_qrels(path: str = "data/TREC_Passage"):
+    filepath = os.path.join(path, '2019qrels-pass.txt')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
-        download_dataset(['qrels.train.tsv'], path)
+        download_dataset(['2019qrels-pass.txt'], path)
 
     col_names = ["qID", "0", "pID", "feedback"]
+    df_test = pd.read_csv(filepath, sep=" ", names=col_names, header=None)
+    return df_test.drop(columns=['0'])
+
+
+def import_training_set(path: str = "data/TREC_Passage", collection: list = None):
+    filepath = os.path.join(path, 'qidpidtriples.train.full.2.tsv')
+    if not os.path.exists(filepath):
+        LOGGER.debug("File not there, downloading a new one")
+        download_dataset(['qidpidtriples.train.full.2.tsv'], path)
+
+    col_names = ["qID", "positive", "negative"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
-    if collections is not None:
-        df = df[df['pID'].isin(collections)].reset_index(drop=True)
-    return df['qID'], df['pID']
+    if collection is not None:
+        df = df[(df['positive'].isin(collection)) & (df['negative'].isin(collection))].reset_index(drop=True)
+    return pd.DataFrame({
+                'qID': pd.concat([df['qID'], df['qID']]),
+                'pID': pd.concat([df['positive'], df['negative']]),
+                'y': [1] * len(df) + [0] * len(df)
+            }).drop_duplicates()
