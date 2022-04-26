@@ -19,6 +19,7 @@ def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.Dat
     glove, _ = create_glove_embeddings(collection, glove=glove, name='collection')
     create_glove_embeddings(queries, glove=glove, name='query')
     features = create_tfidf_feature(features, collection, queries)
+    features = create_glove_feature(features, collection, queries)
     features = create_jaccard_feature(features, collection, queries)
     features = create_sentence_features(features, collection, queries)
     features = create_interpretation_features(features, collection, queries)
@@ -123,6 +124,8 @@ def create_glove_feature(features: pd.DataFrame, collection: pd.DataFrame, queri
                                                                                                 collection[
                                                                                                     'pID'] == qrel.pID].index]),
                                                             axis=1)
+    
+    return features
 
 def create_jaccard_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame):
     features['jaccard'] = features.progress_apply(

@@ -76,9 +76,9 @@ class Pipeline(object):
     def create_glove_embeddings(self):
         assert self.collection['preprocessed'] is not None, "Preprocess the data first"
 
-        tfidf, self.collection = create_glove_embeddings(self.collection, name='collection')
-        tfidf, self.queries = create_glove_embeddings(self.queries, tfidf=tfidf, name='query')
-        tfidf, self.queries_test = create_glove_embeddings(self.queries_test, tfidf=tfidf, name='query_test')
+        glove, self.collection = create_glove_embeddings(self.collection, name='collection')
+        glove, self.queries = create_glove_embeddings(self.queries, glove=glove, name='query')
+        glove, self.queries_test = create_glove_embeddings(self.queries_test, glove=glove, name='query_test')
 
         return self.save()
 
