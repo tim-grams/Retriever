@@ -23,6 +23,8 @@ class Pipeline(object):
 
     def __init__(self, collection: str = None, queries: str = None, queries_test: str = None,
                  features: str = None, qrels: str = None):
+        if qrels is not None:
+            self.qrels = pd.read_pickle(qrels)
         if collection is not None:
             self.collection = pd.read_pickle(collection)
         if queries is not None:
@@ -31,8 +33,6 @@ class Pipeline(object):
             self.queries_test = pd.read_pickle(queries_test)
         if features is not None:
             self.features = pd.read_pickle(features)
-        if qrels is not None:
-            self.qrels = pd.read_pickle(qrels)
 
     def setup(self, datasets: list = None, path: str = 'data/TREC_Passage'):
         if datasets is None:
@@ -45,10 +45,10 @@ class Pipeline(object):
             self.collection = import_collection(path)
         if 'qidpidtriples.train.full.2.tsv' in datasets:
             self.features = import_training_set(path, list(self.collection['pID']))
-        if 'queries.train.tsv' or 'msmarco-test2019-queries.tsv' in datasets:
-            self.queries, self.queries_test = import_queries(path, list(self.features['qID']))
         if '2019qrels-pass.txt' in datasets:
-            self.qrels = import_qrels(path)
+            self.qrels = import_qrels(path, list(self.collection['pID']))
+        if 'queries.train.tsv' or 'msmarco-test2019-queries.tsv' in datasets:
+            self.queries, self.queries_test = import_queries(path, list(self.features['qID']), list(self.qrels['qID']))
 
         return self.save()
 

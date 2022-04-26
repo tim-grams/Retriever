@@ -79,7 +79,7 @@ def unzip(file: str = None):
         LOGGER.info("unzipping successful")
 
 
-def import_queries(path: str = "data/TREC_Passage", queries: list = None):
+def import_queries(path: str = "data/TREC_Passage", queries: list = None, test_queries: list = None):
     filepath = os.path.join(path, 'queries.train.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -97,6 +97,8 @@ def import_queries(path: str = "data/TREC_Passage", queries: list = None):
 
     col_names = ["qID", "Query"]
     test_df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
+    if queries is not None:
+        test_df = test_df[test_df['qID'].isin(test_queries)].reset_index(drop=True)
     return df, test_df
 
 
@@ -112,7 +114,7 @@ def import_collection(path: str = "data/TREC_Passage", samples: int = 5000):
     return df
 
 
-def import_qrels(path: str = "data/TREC_Passage"):
+def import_qrels(path: str = "data/TREC_Passage", collection: list = None):
     filepath = os.path.join(path, '2019qrels-pass.txt')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -120,6 +122,9 @@ def import_qrels(path: str = "data/TREC_Passage"):
 
     col_names = ["qID", "0", "pID", "feedback"]
     df_test = pd.read_csv(filepath, sep=" ", names=col_names, header=None)
+    df_test = df_test[df_test['feedback'] >= 1]
+    if collection is not None:
+        df_test = df_test[df_test['pID'].isin(collection)].reset_index(drop=True)
     return df_test.drop(columns=['0'])
 
 
