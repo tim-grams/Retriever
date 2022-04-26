@@ -1,7 +1,9 @@
 import pandas as pd
 from tqdm import tqdm
 import logging
+import numpy as np
 from src.embeddings.tfidf import TFIDF
+from src.embeddings.glove import Glove
 from src.features.features import cosine_similarity_score, euclidean_distance_score, manhattan_distance_score, jaccard, \
     words, relative_difference, characters, difference, subjectivity, polarisation, POS
 from src.utils.utils import load
@@ -14,6 +16,8 @@ LOGGER = logging.getLogger('generator')
 def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame, tfidf=None):
     tfidf, _ = create_tfidf_embeddings(collection, tfidf=tfidf, name='collection')
     create_tfidf_embeddings(queries, tfidf=tfidf, name='query')
+    glove, _ = create_glove_embeddings(collection, glove=glove, name='collection')
+    create_glove_embeddings(queries, glove=glove, name='query')
     features = create_tfidf_feature(features, collection, queries)
     features = create_jaccard_feature(features, collection, queries)
     features = create_sentence_features(features, collection, queries)
@@ -33,6 +37,16 @@ def create_tfidf_embeddings(data: pd.DataFrame, tfidf=None, name: str = ''):
         f"data/embeddings/tfidf_{name}_embeddings.pkl")
 
     return tfidf, data
+
+def create_glove_embeddings(data: pd.DataFrame, glove=None, name: str = ''):
+        if glove is None:
+            glove = Glove()
+
+        data['glove'] = glove.transform(
+            data['preprocessed'],
+            f"data/embeddings/glove_{name}_embeddings.pkl")
+
+        return glove, data
 
 
 def create_tfidf_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
@@ -73,6 +87,42 @@ def create_tfidf_feature(features: pd.DataFrame, collection: pd.DataFrame, queri
 
     return features
 
+def create_glove_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
+                         path_collection: str = 'data/embeddings/glove_collection_embeddings.pkl',
+                         path_query: str = 'data/embeddings/glove_query_embeddings.pkl'):
+    embeddings = np.array(load(path_collection))
+    embeddings_queries = np.array(load(path_query))
+
+    features['glove_cosine'] = features.progress_apply(lambda qrel:
+                                                        cosine_similarity_score(embeddings_queries[
+                                                                                    queries[
+                                                                                        queries[
+                                                                                            'qID'] == qrel.qID].index],
+                                                                                embeddings[
+                                                                                    collection[
+                                                                                        collection[
+                                                                                            'pID'] == qrel.pID].index]),
+                                                        axis=1)
+    features['glove_euclidean'] = features.progress_apply(lambda qrel:
+                                                            euclidean_distance_score(embeddings_queries[
+                                                                                        queries[
+                                                                                            queries[
+                                                                                                'qID'] == qrel.qID].index],
+                                                                                    embeddings[
+                                                                                        collection[
+                                                                                            collection[
+                                                                                                'pID'] == qrel.pID].index]),
+                                                                        axis=1)
+    features['glove_manhattan'] = features.progress_apply(lambda qrel:
+                                                            manhattan_distance_score(embeddings_queries[
+                                                                                            queries[
+                                                                                                queries[
+                                                                                                    'qID'] == qrel.qID].index],
+                                                                                        embeddings[
+                                                                                            collection[
+                                                                                                collection[
+                                                                                                    'pID'] == qrel.pID].index]),
+                                                            axis=1)
 
 def create_jaccard_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame):
     features['jaccard'] = features.progress_apply(
