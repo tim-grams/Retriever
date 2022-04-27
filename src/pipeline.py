@@ -2,7 +2,7 @@ from src.data.dataset import download_dataset, import_queries, import_collection
 import pandas as pd
 from tqdm import tqdm
 from src.data.preprocessing import preprocess
-from src.features.generator import create_tfidf_embeddings, create_all, create_BM2_feature, create_tfidf_feature, create_jaccard_feature, create_POS_features, create_interpretation_features, create_sentence_features
+from src.features.generator import create_w2v_embeddings, create_tfidf_embeddings, create_all, create_BM2_feature, create_tfidf_feature, create_jaccard_feature, create_POS_features, create_interpretation_features, create_sentence_features
 import logging
 import os
 from src.utils.utils import check_path_exists
@@ -39,7 +39,7 @@ class Pipeline(object):
             datasets = ['collection.tsv', 'queries.train.tsv', 'msmarco-test2019-queries.tsv',
                         '2019qrels-pass.txt', 'qidpidtriples.train.full.2.tsv']
 
-        download_dataset(datasets)
+        #download_dataset(datasets)
 
         if 'collection.tsv' in datasets:
             self.collection = import_collection(path)
@@ -70,6 +70,16 @@ class Pipeline(object):
         tfidf, self.collection = create_tfidf_embeddings(self.collection, name='collection')
         tfidf, self.queries = create_tfidf_embeddings(self.queries, tfidf=tfidf, name='query')
         tfidf, self.queries_test = create_tfidf_embeddings(self.queries_test, tfidf=tfidf, name='query_test')
+
+        return self.save()
+
+
+    def create_w2v_embeddings(self):
+        assert self.collection['preprocessed'] is not None, "Preprocess the data first"
+
+        w2v, self.collection = create_w2v_embeddings(self.collection, name='collection')
+        w2v, self.queries = create_w2v_embeddings(self.queries, w2v=w2v, name='query')
+        w2v, self.queries_test = create_w2v_embeddings(self.queries_test, w2v=w2v, name='query_test')
 
         return self.save()
 

@@ -2,6 +2,7 @@ import pandas as pd
 from tqdm import tqdm
 import logging
 from src.embeddings.tfidf import TFIDF
+from src.embeddings.word2vec import word2vec
 from src.features.features import cosine_similarity_score, euclidean_distance_score, manhattan_distance_score, jaccard, \
     words, relative_difference, characters, difference, subjectivity, polarisation, POS
 from src.utils.utils import load
@@ -21,6 +22,17 @@ def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.Dat
     features = create_BM2_feature(features, collection, queries)
     return create_POS_features(features, collection, queries)
 
+def create_w2v_embeddings(data: pd.DataFrame, w2v=None, name: str = ''):
+    if w2v is None:
+        w2v = word2vec(100,1)
+
+    data['w2v'] = w2v.transform(data['preprocessed'],
+        f"data/embeddings/w2v_{name}_embeddings.pkl")
+
+    return w2v, data
+
+def create_w2v_features():
+    pass
 
 def create_tfidf_embeddings(data: pd.DataFrame, tfidf=None, name: str = ''):
     if tfidf is None:

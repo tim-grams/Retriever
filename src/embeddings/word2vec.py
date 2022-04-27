@@ -1,8 +1,14 @@
 from gensim.models import Word2Vec
+from src.utils.utils import check_path_exists, save, load
 import numpy as np
+import tqdm
+import pandas as pd
+import os
+
 
 
 class word2vec(object):
+    is_vocabular = False
     is_transform = False
 
     def __init__(self, vector_size, min_count):
@@ -14,14 +20,32 @@ class word2vec(object):
 
     def vocabular(self, text_in_tokens):
         self.embedding.build_vocab(text_in_tokens)
+        self.is_vocabular = True
 
-    def transform(self, text_in_tokens):
-        self.vocabular(text_in_tokens)
+        return self
+
+    def transform(self, text_in_tokens: pd.Series, store: str = None):
+        if self.is_vocabular is False: 
+            self.vocabular(text_in_tokens)
 
         self.embedding.train(text_in_tokens, total_examples=self.embedding.corpus_count, epochs=self.embedding.epochs)
         self.is_transform = True
 
-        return self.embedding.wv.vectors
+        w = self.get_wv()
+
+        embeddings = []
+        for x in tqdm(range(len(text_in_tokens))):
+            sen = []
+            for word in text_in_tokens[x]:
+                sen.append(w[word])
+            embeddings.append(np.array(sen).sum(axis=0))
+        
+
+        if store is not None:
+            check_path_exists(os.path.dirname(store))
+            save(embeddings, store)
+
+        return np.array(embeddings)
 
     # Additional Methods
     def get_wv(self):

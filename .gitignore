@@ -15,6 +15,7 @@ __pycache__
 /data/datasets
 /data/embeddings
 /data/thumbnails
+/notebooks/data
 /venv/
 
 
