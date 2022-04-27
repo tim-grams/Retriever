@@ -34,9 +34,9 @@ class word2vec(object):
         w = self.get_wv()
 
         embeddings = []
-        for x in tqdm(range(len(text_in_tokens))):
+        for sentence in tqdm(text_in_tokens):
             sen = []
-            for word in text_in_tokens[x]:
+            for word in sentence:
                 sen.append(w[word])
             embeddings.append(np.array(sen).sum(axis=0))
         
@@ -45,7 +45,7 @@ class word2vec(object):
             check_path_exists(os.path.dirname(store))
             save(embeddings, store)
 
-        return np.array(embeddings)
+        return embeddings
 
     def get_wv(self):
         assert self.is_transform is not False, 'You need to use .transform() first'
