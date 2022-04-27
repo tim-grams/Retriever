@@ -3,8 +3,9 @@ from flair.data import Sentence
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 from tqdm import tqdm
 import torch
-from src.utils.utils import check_path_exists, save, load
+from src.utils.utils import check_path_exists, save
 import os
+import pandas as pd
 
 
 class Elmo(object):
