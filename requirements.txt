@@ -4,3 +4,5 @@ requests
 numpy
 nltk
 scikit-learn
+textblob
+gensim

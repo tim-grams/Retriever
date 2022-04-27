@@ -7,6 +7,7 @@ LOGGER = logging.getLogger('utils')
 
 def check_path_exists(path: str = None):
     """ Checks if a path exists and creates it if not.
+
     Args:
         path (str): The path to check.
     """

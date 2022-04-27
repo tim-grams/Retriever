@@ -4,10 +4,24 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.stem.porter import PorterStemmer
 import pandas as pd
+from sklearn.decomposition import PCA
+import logging
+import numpy as np
 
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
+
+LOGGER = logging.getLogger('Preprocessor')
+
+
+def preprocess(data: pd.Series):
+    LOGGER.info('Preprocessing ...')
+    return data.progress_apply(lambda text: np.array(
+        stemming(
+            removal(
+                tokenization(text)
+            ))))
 
 
 def tokenization(text: str):
@@ -33,3 +47,10 @@ def lemmatization(tokens: pd.Series):
     lemmatizer = WordNetLemmatizer()
 
     return tokens.apply(lambda token: lemmatizer.lemmatize(token))
+
+
+def pca(features: pd.DataFrame, components: int = 5):
+    pca = PCA(components)
+    columns = ['pca_comp_%i' % i for i in range(components)]
+
+    return pd.DataFrame(pca.fit_transform(features), columns=columns, index=features.index)

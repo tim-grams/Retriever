@@ -11,19 +11,33 @@ from src.utils.utils import check_path_exists
 LOGGER = logging.getLogger('cli')
 
 
-def download_dataset(datasets: str = "all", location: str = "data/TREC_Passage"):
-    if datasets == "all":
-        remote_url = "https://msmarco.blob.core.windows.net/msmarcoranking/collectionandqueries.tar.gz"
-    elif datasets == "queries":
-        remote_url = "https://msmarco.blob.core.windows.net/msmarcoranking/queries.tar.gz"
-    else:
-        raise NotImplementedError
+def download_dataset(datasets: list = None, path: str = "data/TREC_Passage"):
+    assert datasets is not None, "No dataset selected"
 
-    check_path_exists(location)
+    links = {
+        'collection.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/collection.tar.gz",
+        'queries.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/queries.tar.gz",
+        'qrels.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/qrels.train.tsv",
+        'qidpidtriples.train.full.2.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/qidpidtriples.train.full.2.tsv',
+        'msmarco-test2019-queries.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/msmarco-test2019-queries.tsv',
+        '2019qrels-pass.txt': 'https://msmarco.blob.core.windows.net/msmarcoranking/2019qrels-pass.txt'
+    }
+
+    check_path_exists(path)
+
+    for dataset in datasets:
+        filepath = os.path.join(path, dataset)
+        download(links[dataset], path) if not os.path.exists(filepath) else LOGGER.debug(f'{dataset} already exists')
+        unzip(filepath)
+
+
+def download(remote_url: str = None, path: str = None):
+    assert remote_url is not None, "No URL given"
+    assert path is not None, "Specify local path"
 
     # Construct paths
     file_name = remote_url.rsplit("/", 1)[-1]
-    file_path = os.path.join(location, file_name)
+    file_path = os.path.join(path, file_name)
 
     # Get Data and Save on disk (streaming bc large file sizes, so we don't run out of memory)
     LOGGER.info("Start Downloading Data")
@@ -39,57 +53,93 @@ def download_dataset(datasets: str = "all", location: str = "data/TREC_Passage")
     progress_bar.close()
     LOGGER.info("Downloading finished")
 
-    # Check if everything went right with the download
     if total_bytesize != 0 and progress_bar.n != total_bytesize:
         LOGGER.error("Something went wrong while downloading")
         raise FileExistsError
 
-    # unzip archives if needed
-    if file_name.endswith(".tar.gz"):
-        LOGGER.info("start unzipping .tar.gz file")
-        with tarfile.open(file_path) as tar:
-            tar.extractall(path=location)
 
-        os.remove(file_path)
+def unzip(file: str = None):
+    assert file is not None, "No file specified"
+
+    if file.endswith(".tar.gz"):
+        LOGGER.info("start unzipping .tar.gz file")
+        with tarfile.open(file) as tar:
+            tar.extractall(path=os.path.dirname(file))
+
+        os.remove(file)
         LOGGER.info("unzipping successful")
 
-    elif file_name.endswith(".gz"):
+    elif file.endswith(".gz"):
         LOGGER.info("start unzipping .gz file")
-        with gzip.open(file_path, "rb") as f_in:
-            with open(os.path.join(location, file_name[:-3]), "wb") as f_out:
+        with gzip.open(file, "rb") as f_in:
+            with open(os.path.join(os.path.dirname(file), file[:-3]), "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
-        os.remove(file_path)
+        os.remove(file)
         LOGGER.info("unzipping successful")
 
-    return location
 
-
-def import_queries(filepath: str = "data/TREC_Passage/queries.dev.tsv",
-                   dataframe_location: str = "data/raw"):
+def import_queries(path: str = "data/TREC_Passage", queries: list = None, test_queries: list = None):
+    filepath = os.path.join(path, 'queries.train.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
-        download_dataset("queries")
-
-    check_path_exists(dataframe_location)
-    dataframe_path = os.path.join(dataframe_location, 'queries.pkl')
+        download_dataset(["queries.train.tsv"], path)
 
     col_names = ["qID", "Query"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
-    df.to_pickle(dataframe_path)
-    return df
+    if queries is not None:
+        df = df[df['qID'].isin(queries)].reset_index(drop=True)
 
-
-def import_collection(filepath: str = "data/TREC_Passage/collection.tsv",
-                      dataframe_location: str = "data/raw"):
+    filepath = os.path.join(path, 'msmarco-test2019-queries.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
-        download_dataset()
+        download_dataset(["msmarco-test2019-queries.tsv"], path)
 
-    check_path_exists(dataframe_location)
-    dataframe_path = os.path.join(dataframe_location, 'collection.pkl')
+    col_names = ["qID", "Query"]
+    test_df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
+    if queries is not None:
+        test_df = test_df[test_df['qID'].isin(test_queries)].reset_index(drop=True)
+    return df, test_df
+
+
+def import_collection(path: str = "data/TREC_Passage", samples: int = 5000):
+    filepath = os.path.join(path, 'collection.tsv')
+    if not os.path.exists(filepath):
+        LOGGER.debug("File not there, downloading a new one")
+        download_dataset(['collection.tsv'], path)
 
     col_names = ["pID", "Passage"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
-    df.to_pickle(dataframe_path)
+    df = df.sample(samples, random_state=42).reset_index(drop=True)
     return df
+
+
+def import_qrels(path: str = "data/TREC_Passage", collection: list = None):
+    filepath = os.path.join(path, '2019qrels-pass.txt')
+    if not os.path.exists(filepath):
+        LOGGER.debug("File not there, downloading a new one")
+        download_dataset(['2019qrels-pass.txt'], path)
+
+    col_names = ["qID", "0", "pID", "feedback"]
+    df_test = pd.read_csv(filepath, sep=" ", names=col_names, header=None)
+    df_test = df_test[df_test['feedback'] >= 1]
+    if collection is not None:
+        df_test = df_test[df_test['pID'].isin(collection)].reset_index(drop=True)
+    return df_test.drop(columns=['0'])
+
+
+def import_training_set(path: str = "data/TREC_Passage", collection: list = None):
+    filepath = os.path.join(path, 'qidpidtriples.train.full.2.tsv')
+    if not os.path.exists(filepath):
+        LOGGER.debug("File not there, downloading a new one")
+        download_dataset(['qidpidtriples.train.full.2.tsv'], path)
+
+    col_names = ["qID", "positive", "negative"]
+    df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
+    if collection is not None:
+        df = df[(df['positive'].isin(collection)) & (df['negative'].isin(collection))].reset_index(drop=True)
+    return pd.DataFrame({
+                'qID': pd.concat([df['qID'], df['qID']]),
+                'pID': pd.concat([df['positive'], df['negative']]),
+                'y': [1] * len(df) + [0] * len(df)
+            }).drop_duplicates()

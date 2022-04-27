@@ -3,11 +3,21 @@ import argparse
 from src.pipeline import Pipeline
 
 LOGGER = logging.getLogger('cli')
+pipeline = Pipeline()
 
 
-def _download_data(args):
-    pipeline = Pipeline()
-    pipeline.download()
+def _setup(args):
+    pipeline.setup()
+    pipeline.preprocess()
+
+
+def _tfidf(args):
+    pipeline.create_tfidf_embeddings()
+    pipeline.create_tfidf_feature()
+
+
+def _jaccard(args):
+    pipeline.create_jaccard_feature()
 
 
 def _get_parser():
@@ -22,10 +32,17 @@ def _get_parser():
                                      parents=[logging_args])
     subparsers = parser.add_subparsers(title='action', help='Action to perform')
 
-    # Parser to search for videos with an entity
-    data_download = subparsers.add_parser('download', help='Downloads the specified dataset in the /data/ folder')
-    data_download.add_argument('--datasets', help='Can be all or queries', type=str, default='all')
-    data_download.set_defaults(action=_download_data)
+    # Parser to setup and preprocess the data
+    data_download = subparsers.add_parser('setup', help='Downloads and preprocesses the data')
+    data_download.set_defaults(action=_setup)
+
+    # Parser to create tfidf features
+    data_download = subparsers.add_parser('tfidf', help='Creates tfidf-features')
+    data_download.set_defaults(action=_tfidf)
+
+    # Parser to create jaccard feature
+    data_download = subparsers.add_parser('jaccard', help='Creates jaccard-features')
+    data_download.set_defaults(action=_jaccard)
 
     return parser
 
