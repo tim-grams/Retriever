@@ -2,8 +2,9 @@ from flair.embeddings import ELMoEmbeddings
 from flair.data import Sentence
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 from tqdm import tqdm
-import numpy as np
 import torch
+from src.utils.utils import check_path_exists, save, load
+import os
 
 
 class Elmo(object):
@@ -11,7 +12,7 @@ class Elmo(object):
         # init embedding
         self.embedding = ELMoEmbeddings()
 
-    def transform(self, X):
+    def transform(self, X: pd.Series, store: str = None):
 
         elmo_list = []
         for line in tqdm(X):
@@ -23,4 +24,8 @@ class Elmo(object):
             for token in sentence:
                 tokens_per_sentence = torch.add(tokens_per_sentence, token.embedding)
             elmo_list.append(tokens_per_sentence)
-        return np.array(elmo_list)
+
+        if store is not None:
+            check_path_exists(os.path.dirname(store))
+            save(elmo_list, store)
+        return elmo_list
