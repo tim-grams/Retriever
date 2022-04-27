@@ -47,7 +47,6 @@ class word2vec(object):
 
         return np.array(embeddings)
 
-    # Additional Methods
     def get_wv(self):
         assert self.is_transform is not False, 'You need to use .transform() first'
 
