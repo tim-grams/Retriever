@@ -31,8 +31,43 @@ def create_w2v_embeddings(data: pd.DataFrame, w2v=None, name: str = ''):
 
     return w2v, data
 
-def create_w2v_features():
-    pass
+def create_w2v_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
+                         path_collection: str = 'data/embeddings/w2v_collection_embeddings.pkl',
+                         path_query: str = 'data/embeddings/w2v_query_embeddings.pkl'):
+    embeddings = load(path_collection)
+    embeddings_queries = load(path_query)
+
+    features['w2v_cosine'] = features.progress_apply(lambda qrel:
+                                                       cosine_similarity_score(embeddings_queries[
+                                                                                   queries[
+                                                                                       queries[
+                                                                                           'qID'] == qrel.qID].index],
+                                                                               embeddings[collection[
+                                                                                   collection[
+                                                                                       'pID'] == qrel.pID].index]),
+                                                       axis=1)
+    features['w2v_euclidean'] = features.progress_apply(lambda qrel:
+                                                          euclidean_distance_score(embeddings_queries[
+                                                                                       queries[
+                                                                                           queries[
+                                                                                               'qID'] == qrel.qID].index],
+                                                                                   embeddings[
+                                                                                       collection[
+                                                                                           collection[
+                                                                                               'pID'] == qrel.pID].index]),
+                                                          axis=1)
+    features['w2v_manhattan'] = features.progress_apply(lambda qrel:
+                                                          manhattan_distance_score(embeddings_queries[
+                                                                                       queries[
+                                                                                           queries[
+                                                                                               'qID'] == qrel.qID].index],
+                                                                                   embeddings[
+                                                                                       collection[
+                                                                                           collection[
+                                                                                               'pID'] == qrel.pID].index]),
+                                                          axis=1)
+
+    return features
 
 def create_tfidf_embeddings(data: pd.DataFrame, tfidf=None, name: str = ''):
     if tfidf is None:

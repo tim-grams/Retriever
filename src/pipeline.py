@@ -2,7 +2,7 @@ from src.data.dataset import download_dataset, import_queries, import_collection
 import pandas as pd
 from tqdm import tqdm
 from src.data.preprocessing import preprocess
-from src.features.generator import create_w2v_embeddings, create_tfidf_embeddings, create_all, create_BM2_feature, create_tfidf_feature, create_jaccard_feature, create_POS_features, create_interpretation_features, create_sentence_features
+from src.features.generator import create_w2v_embeddings, create_w2v_feature, create_tfidf_embeddings, create_all, create_BM2_feature, create_tfidf_feature, create_jaccard_feature, create_POS_features, create_interpretation_features, create_sentence_features
 import logging
 import os
 from src.utils.utils import check_path_exists
@@ -80,6 +80,12 @@ class Pipeline(object):
         w2v, self.collection = create_w2v_embeddings(self.collection, name='collection')
         w2v, self.queries = create_w2v_embeddings(self.queries, w2v=w2v, name='query')
         w2v, self.queries_test = create_w2v_embeddings(self.queries_test, w2v=w2v, name='query_test')
+
+        return self.save()
+
+    def create_w2v_feature(self, path_collection: str = 'data/embeddings/w2v_collection_embeddings.pkl',
+                             path_query: str = 'data/embeddings/w2v_query_embeddings.pkl'):
+        self.features = create_w2v_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self.save()
 
