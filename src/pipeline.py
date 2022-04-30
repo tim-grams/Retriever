@@ -2,7 +2,9 @@ from src.data.dataset import download_dataset, import_queries, import_collection
 import pandas as pd
 from tqdm import tqdm
 from src.data.preprocessing import preprocess
-from src.features.generator import create_tfidf_embeddings, create_all, create_BM2_feature, create_tfidf_feature, create_glove_embeddings, create_glove_feature,  create_jaccard_feature, create_POS_features, create_interpretation_features, create_sentence_features
+from src.features.generator import create_tfidf_embeddings, create_all, create_BM2_feature, create_tfidf_feature, \
+    create_glove_embeddings, create_glove_feature, create_elmo_embeddings, create_elmo_feature, create_jaccard_feature, create_POS_features, \
+    create_interpretation_features, create_sentence_features
 import logging
 import os
 from src.utils.utils import check_path_exists
@@ -82,6 +84,16 @@ class Pipeline(object):
 
         return self.save()
 
+
+    def create_elmo_embeddings(self):
+        assert self.collection['preprocessed'] is not None, "Preprocess the data first"
+
+        elmo, self.collection = create_elmo_embeddings(self.collection, name='collection')
+        elmo, self.queries = create_elmo_embeddings(self.queries, elmo=elmo, name='query')
+        elmo, self.queries_test = create_elmo_embeddings(self.queries_test, elmo=elmo, name='query_test')
+
+        return self.save()
+
     def create_tfidf_feature(self, path_collection: str = 'data/embeddings/tfidf_collection_embeddings.pkl',
                              path_query: str = 'data/embeddings/tfidf_query_embeddings.pkl'):
         self.features = create_tfidf_feature(self.features, self.collection, self.queries, path_collection, path_query)
@@ -91,6 +103,13 @@ class Pipeline(object):
     def create_glove_feature(self, path_collection: str = 'data/embeddings/glove_collection_embeddings.pkl',
                              path_query: str = 'data/embeddings/glove_query_embeddings.pkl'):
         self.features = create_glove_feature(self.features, self.collection, self.queries, path_collection, path_query)
+
+        return self.save()
+
+
+    def create_elmo_feature(self, path_collection: str = 'data/embeddings/elmo_collection_embeddings.pkl',
+                             path_query: str = 'data/embeddings/elmo_query_embeddings.pkl'):
+        self.features = create_elmo_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self.save()
 
