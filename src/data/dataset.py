@@ -102,7 +102,7 @@ def import_queries(path: str = "data/TREC_Passage", queries: list = None, test_q
     return df, test_df
 
 
-def import_collection(path: str = "../data/TREC_Passage", samples: int = 5000):
+def import_collection(path: str = "data/TREC_Passage", samples: int = 5000):
     current_directory = os.getcwd()
     #filepath = fr'{current_directory}\data\TREC_Passage\collection.tsv'
     filepath = os.path.join(path, 'collection.tsv')
@@ -125,7 +125,7 @@ def import_qrels(path: str = "data/TREC_Passage", collection: list = None):
     col_names = ["qID", "0", "pID", "feedback"]
     df_test = pd.read_csv(filepath, sep=" ", names=col_names, header=None)
     print(df_test['feedback'].dtype)
-    df_test = df_test[df_test['feedback'] >= 1]
+    df_test = df_test[df_test['feedback'].astype(float) >= 1]
     if collection is not None:
         df_test = df_test[df_test['pID'].isin(collection)].reset_index(drop=True)
     return df_test.drop(columns=['0'])

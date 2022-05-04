@@ -5,4 +5,7 @@ numpy
 nltk
 scikit-learn
 textblob
-gensim
+jupyter
+flair
+torch
+dill

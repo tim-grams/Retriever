@@ -1,0 +1,17 @@
+version: "3.7"
+
+services:
+  jupyterlab-retriever:
+    build: # todo add user to avoid secuirty warning
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./src:/project/src/
+      - ./notebooks:/project/notebooks/
+      - ./models:/project/modles
+      - ./data:/project/data
+    init: true
+    stdin_open: true
+    tty: true
