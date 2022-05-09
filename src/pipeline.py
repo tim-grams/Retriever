@@ -38,7 +38,6 @@ class Pipeline(object):
         if datasets is None:
             datasets = ['collection.tsv', 'queries.train.tsv', 'msmarco-test2019-queries.tsv',
                         '2019qrels-pass.txt', 'qidpidtriples.train.full.2.tsv']
-
         #download_dataset(datasets)
 
         if 'collection.tsv' in datasets:

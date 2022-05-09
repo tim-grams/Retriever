@@ -20,11 +20,16 @@ class word2vec(object):
 
     def vocabular(self, text_in_tokens):
         self.embedding.build_vocab(text_in_tokens)
-        self.is_vocabular = True
+        # self.is_vocabular = True
+        ''' Currently vocab is relearned for each new dataset (collection, query, ...) 
+        Solve vocabulary building problem
+        Every word that occurs in dataset which is used in the tranform func
+        has to be in vocab. -> not all words in the query dataset appear in collection dataset '''
 
         return self
 
     def transform(self, text_in_tokens: pd.Series, store: str = None):
+        text_in_tokens = [arr.tolist() for arr in text_in_tokens]
         if self.is_vocabular is False: 
             self.vocabular(text_in_tokens)
 
@@ -34,9 +39,9 @@ class word2vec(object):
         w = self.get_wv()
 
         embeddings = []
-        for x in tqdm(range(len(text_in_tokens))):
+        for sentence in text_in_tokens:
             sen = []
-            for word in text_in_tokens[x]:
+            for word in sentence:
                 sen.append(w[word])
             embeddings.append(np.array(sen).sum(axis=0))
         
@@ -45,7 +50,7 @@ class word2vec(object):
             check_path_exists(os.path.dirname(store))
             save(embeddings, store)
 
-        return np.array(embeddings)
+        return embeddings
 
     def get_wv(self):
         assert self.is_transform is not False, 'You need to use .transform() first'
