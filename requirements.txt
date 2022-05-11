@@ -6,3 +6,4 @@ nltk
 scikit-learn
 textblob
 gensim
+sentence_transformers

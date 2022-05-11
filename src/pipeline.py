@@ -2,7 +2,7 @@ from src.data.dataset import download_dataset, import_queries, import_collection
 import pandas as pd
 from tqdm import tqdm
 from src.data.preprocessing import preprocess
-from src.features.generator import create_tfidf_embeddings, create_all, create_BM2_feature, create_tfidf_feature, create_glove_embeddings, create_glove_feature,  create_jaccard_feature, create_POS_features, create_interpretation_features, create_sentence_features
+from src.features.generator import create_bert_embeddings, create_bert_feature, create_tfidf_embeddings, create_all, create_BM2_feature, create_tfidf_feature, create_glove_embeddings, create_glove_feature,  create_jaccard_feature, create_POS_features, create_interpretation_features, create_sentence_features
 import logging
 import os
 from src.utils.utils import check_path_exists
@@ -39,7 +39,7 @@ class Pipeline(object):
             datasets = ['collection.tsv', 'queries.train.tsv', 'msmarco-test2019-queries.tsv',
                         '2019qrels-pass.txt', 'qidpidtriples.train.full.2.tsv']
 
-        download_dataset(datasets)
+        #download_dataset(datasets)
 
         if 'collection.tsv' in datasets:
             self.collection = import_collection(path)
@@ -73,6 +73,13 @@ class Pipeline(object):
 
         return self.save()
 
+
+    def create_bert_embeddings(self):
+
+        bert, self.collection = create_bert_embeddings(self.collection, name='collection')
+        bert, self.queries = create_bert_embeddings(self.queries, bert=bert, name='query')
+        bert, self.queries_test = create_bert_embeddings(self.queries_test, bert=bert, name='query_test')
+
     def create_glove_embeddings(self):
         assert self.collection['preprocessed'] is not None, "Preprocess the data first"
 
@@ -85,6 +92,12 @@ class Pipeline(object):
     def create_tfidf_feature(self, path_collection: str = 'data/embeddings/tfidf_collection_embeddings.pkl',
                              path_query: str = 'data/embeddings/tfidf_query_embeddings.pkl'):
         self.features = create_tfidf_feature(self.features, self.collection, self.queries, path_collection, path_query)
+
+        return self.save()
+
+    def create_bert_feature(self, path_collection: str = 'data/embeddings/bert_collection_embeddings.pkl',
+                            path_query: str = 'data/embeddings/bert_query_embeddings.pkl'):
+        self.features = create_bert_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self.save()
 

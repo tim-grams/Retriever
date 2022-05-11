@@ -2,6 +2,7 @@ import pandas as pd
 from tqdm import tqdm
 import logging
 import numpy as np
+from src.embeddings.bert import Bert
 from src.embeddings.tfidf import TFIDF
 from src.embeddings.glove import Glove
 from src.features.features import cosine_similarity_score, euclidean_distance_score, manhattan_distance_score, jaccard, \
@@ -49,6 +50,23 @@ def create_glove_embeddings(data: pd.DataFrame, glove=None, name: str = ''):
 
         return glove, data
 
+
+def create_bert_embeddings(data: pd.DataFrame, bert=None, name: str = ''):
+        if bert is None:
+            bert = Bert()
+
+        column_name = ""
+        if name == "collection":
+            column_name = "Passage"
+        if name == "query" or name == "query_test":
+            column_name = "Query"
+
+
+        data['bert'] = bert.transform(
+            data[column_name],
+            f"data/embeddings/bert_{name}_embeddings.pkl")
+
+        return bert, data
 
 def create_tfidf_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
                          path_collection: str = 'data/embeddings/tfidf_collection_embeddings.pkl',
@@ -127,6 +145,46 @@ def create_glove_feature(features: pd.DataFrame, collection: pd.DataFrame, queri
     
     return features
 
+def create_bert_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
+                         path_collection: str = 'data/embeddings/bert_collection_embeddings.pkl',
+                         path_query: str = 'data/embeddings/bert_query_embeddings.pkl'):
+    embeddings = np.array(load(path_collection))
+
+    embeddings_queries = np.array(load(path_query))
+
+    features['bert_cosine'] = features.progress_apply(lambda qrel:
+                                                        cosine_similarity_score(embeddings_queries[
+                                                                                    queries[
+                                                                                        queries[
+                                                                                            'qID'] == qrel.qID].index],
+                                                                                embeddings[
+                                                                                    collection[
+                                                                                        collection[
+                                                                                            'pID'] == qrel.pID].index]),
+                                                        axis=1)
+    features['bert_euclidean'] = features.progress_apply(lambda qrel:
+                                                            euclidean_distance_score(embeddings_queries[
+                                                                                        queries[
+                                                                                            queries[
+                                                                                                'qID'] == qrel.qID].index],
+                                                                                    embeddings[
+                                                                                        collection[
+                                                                                            collection[
+                                                                                                'pID'] == qrel.pID].index]),
+                                                                        axis=1)
+    features['bert_manhattan'] = features.progress_apply(lambda qrel:
+                                                            manhattan_distance_score(embeddings_queries[
+                                                                                            queries[
+                                                                                                queries[
+                                                                                                    'qID'] == qrel.qID].index],
+                                                                                        embeddings[
+                                                                                            collection[
+                                                                                                collection[
+                                                                                                    'pID'] == qrel.pID].index]),
+                                                            axis=1)
+    
+    return features
+    
 def create_jaccard_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame):
     features['jaccard'] = features.progress_apply(
         lambda qrel: jaccard(collection[collection['pID'] == qrel['pID']]['preprocessed'].iloc[0],
