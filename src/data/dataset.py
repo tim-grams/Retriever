@@ -19,8 +19,8 @@ def download_dataset(datasets: list = None, path: str = "data/TREC_Passage"):
         'queries.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/queries.tar.gz",
         'qrels.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/qrels.train.tsv",
         'qidpidtriples.train.full.2.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/qidpidtriples.train.full.2.tsv',
-        'msmarco-test2019-queries.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/msmarco-test2019-queries.tsv',
-        '2019qrels-pass.txt': 'https://msmarco.blob.core.windows.net/msmarcoranking/2019qrels-pass.txt'
+        'msmarco-test2019-queries.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/msmarco-test2019-queries.tsv.gz',
+        '2019qrels-pass.txt': 'https://trec.nist.gov/data/deep/2019qrels-pass.txt'
     }
 
     check_path_exists(path)
@@ -66,7 +66,7 @@ def unzip(file: str = None):
         with tarfile.open(file) as tar:
             tar.extractall(path=os.path.dirname(file))
 
-        os.remove(file)
+        #os.remove(file)
         LOGGER.info("unzipping successful")
 
     elif file.endswith(".gz"):
@@ -75,7 +75,7 @@ def unzip(file: str = None):
             with open(os.path.join(os.path.dirname(file), file[:-3]), "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
-        os.remove(file)
+        #os.remove(file)
         LOGGER.info("unzipping successful")
 
 

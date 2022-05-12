@@ -39,7 +39,7 @@ class Pipeline(object):
             datasets = ['collection.tsv', 'queries.train.tsv', 'msmarco-test2019-queries.tsv',
                         '2019qrels-pass.txt', 'qidpidtriples.train.full.2.tsv']
 
-        #download_dataset(datasets)
+        download_dataset(datasets)
 
         if 'collection.tsv' in datasets:
             self.collection = import_collection(path)

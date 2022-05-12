@@ -49,3 +49,6 @@ notebooks/data/TREC_Passage/queries.eval.small.tsv
 notebooks/data/TREC_Passage/queries.eval.tsv
 notebooks/data/TREC_Passage/queries.train.tsv
 notebooks/data/TREC_Passage/queries2.dev.tsv
+notebooks/data/TREC_Passage/collection.tar.gz
+notebooks/data/TREC_Passage/msmarco-test2019-queries.tsv.gz
+notebooks/data/TREC_Passage/queries.tar.gz
