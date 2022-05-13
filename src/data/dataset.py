@@ -102,7 +102,7 @@ def import_queries(path: str = "data/TREC_Passage", queries: list = None, test_q
     return df, test_df
 
 
-def import_collection(path: str = "data/TREC_Passage", samples: int = 5000):
+def import_collection(path: str = "data/TREC_Passage", samples: int = 1000000):
     filepath = os.path.join(path, 'collection.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
