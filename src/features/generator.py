@@ -18,7 +18,7 @@ LOGGER = logging.getLogger('generator')
 def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame, tfidf=None):
     tfidf, _ = create_tfidf_embeddings(collection, tfidf=tfidf, name='collection')
     create_tfidf_embeddings(queries, tfidf=tfidf, name='query')
-    glove, _ = create_glove_embeddings(collection, glove=glove, name='collection')
+    glove, _ = create_glove_embeddings(collection, glove=None, name='collection')
     create_glove_embeddings(queries, glove=glove, name='query')
     bert, _ = create_bert_embeddings(collection, bert=None, name='collection')
     create_bert_embeddings(queries, bert=bert, name='query')
