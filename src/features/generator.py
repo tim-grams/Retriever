@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from tqdm import tqdm
 import logging
 from src.embeddings.tfidf import TFIDF
@@ -10,6 +11,7 @@ from src.features.bm25 import BM25
 
 tqdm.pandas()
 LOGGER = logging.getLogger('generator')
+
 
 
 def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame, tfidf=None):
@@ -34,8 +36,8 @@ def create_w2v_embeddings(data: pd.DataFrame, w2v=None, name: str = ''):
 def create_w2v_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
                          path_collection: str = 'data/embeddings/w2v_collection_embeddings.pkl',
                          path_query: str = 'data/embeddings/w2v_query_embeddings.pkl'):
-    embeddings = load(path_collection)
-    embeddings_queries = load(path_query)
+    embeddings = np.array(load(path_collection))
+    embeddings_queries = np.array(load(path_query))
 
     features['w2v_cosine'] = features.progress_apply(lambda qrel:
                                                        cosine_similarity_score(embeddings_queries[
