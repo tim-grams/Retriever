@@ -7,6 +7,10 @@ import logging
 import os
 from src.utils.utils import check_path_exists
 import time
+from src.models.training import Evaluation
+from sklearn.naive_bayes import GaussianNB
+from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 
 tqdm.pandas()
 LOGGER = logging.getLogger('pipeline')
@@ -73,7 +77,6 @@ class Pipeline(object):
 
         return self.save()
 
-
     def create_bert_embeddings(self):
 
         bert, self.collection = create_bert_embeddings(self.collection, name='collection')
@@ -132,14 +135,27 @@ class Pipeline(object):
 
         return self.save()
 
-    def evaluate(self):
+    def create_all_features(self):
+        self.features = create_all(self.features, self.collection, self.queries)
+
+        return self.save()
+
+    def evaluate(self, model: str = 'nb', pca: int = 0):
         features_test = pd.DataFrame()
         for index, query in self.queries_test.iterrows():
             features_test = pd.concat([features_test, pd.DataFrame({
                 'qID': [query['qID']] * len(self.collection),
                 'pID': self.collection['pID']
             })])
-        create_all(features_test, self.collection, self.queries_test)
+        features_test = create_all(features_test, self.collection, self.queries_test)
+
+        evaluation = Evaluation(self.features, features_test, self.qrels, 50, pca)
+        if model == 'nb':
+            evaluation(GaussianNB())
+        elif model == 'lr':
+            evaluation(LogisticRegression())
+        elif model == 'mlp':
+            evaluation(MLPClassifier())
 
     def save(self, path: str = 'data/processed'):
         check_path_exists(path)
