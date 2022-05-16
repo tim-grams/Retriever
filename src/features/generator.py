@@ -15,14 +15,14 @@ tqdm.pandas()
 LOGGER = logging.getLogger('generator')
 
 
-def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame, tfidf=None, glove=None):
+def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame, tfidf=None, glove=None, bert=None, w2v=None):
     tfidf, _ = create_tfidf_embeddings(collection, tfidf=tfidf, name='collection')
     create_tfidf_embeddings(queries, tfidf=tfidf, name='query')
     glove, _ = create_glove_embeddings(collection, glove=glove, name='collection')
     create_glove_embeddings(queries, glove=glove, name='query')
-    bert, _ = create_bert_embeddings(collection, bert=None, name='collection')
+    bert, _ = create_bert_embeddings(collection, bert=bert, name='collection')
     create_bert_embeddings(queries, bert=bert, name='query')
-    w2v, _ = create_w2v_embeddings(collection, w2v=None, name='collection')
+    w2v, _ = create_w2v_embeddings(collection, w2v=w2v, name='collection')
     create_w2v_embeddings(queries, w2v=w2v, name='query')
     features = create_w2v_feature(features, collection, queries)
     features = create_tfidf_feature(features, collection, queries)

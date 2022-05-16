@@ -15,11 +15,11 @@ def download_dataset(datasets: list = None, path: str = "data/TREC_Passage"):
     assert datasets is not None, "No dataset selected"
 
     links = {
-        'collection.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/collection.tar.gz",
-        'queries.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/queries.tar.gz",
+        'collection.tar.gz': "https://msmarco.blob.core.windows.net/msmarcoranking/collection.tar.gz",
+        'queries.tar.gz': "https://msmarco.blob.core.windows.net/msmarcoranking/queries.tar.gz",
         'qrels.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/qrels.train.tsv",
         'qidpidtriples.train.full.2.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/qidpidtriples.train.full.2.tsv',
-        'msmarco-test2019-queries.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/msmarco-test2019-queries.tsv.gz',
+        'msmarco-test2019-queries.tsv.gz': 'https://msmarco.blob.core.windows.net/msmarcoranking/msmarco-test2019-queries.tsv.gz',
         '2019qrels-pass.txt': 'https://trec.nist.gov/data/deep/2019qrels-pass.txt'
     }
 
@@ -70,7 +70,7 @@ def unzip(file: str = None):
     elif file.endswith(".gz"):
         LOGGER.info("start unzipping .gz file")
         with gzip.open(file, "rb") as f_in:
-            with open(os.path.join(os.path.dirname(file), file[:-3]), "wb") as f_out:
+            with open(file[:-3], "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
         os.remove(file)
@@ -81,7 +81,7 @@ def import_queries(path: str = "data/TREC_Passage", queries: list = None, test_q
     filepath = os.path.join(path, 'queries.train.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
-        download_dataset(["queries.train.tsv"], path)
+        download_dataset(["queries.tar.gz"], path)
 
     col_names = ["qID", "Query"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
@@ -91,7 +91,7 @@ def import_queries(path: str = "data/TREC_Passage", queries: list = None, test_q
     filepath = os.path.join(path, 'msmarco-test2019-queries.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
-        download_dataset(["msmarco-test2019-queries.tsv"], path)
+        download_dataset(["msmarco-test2019-queries.tsv.gz"], path)
 
     col_names = ["qID", "Query"]
     test_df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
@@ -104,7 +104,7 @@ def import_collection(path: str = "data/TREC_Passage", samples: int = 5000):
     filepath = os.path.join(path, 'collection.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
-        download_dataset(['collection.tsv'], path)
+        download_dataset(['collection.tar.gz'], path)
 
     col_names = ["pID", "Passage"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
