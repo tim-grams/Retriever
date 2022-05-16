@@ -26,6 +26,7 @@ def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.Dat
     create_w2v_embeddings(queries, w2v=w2v, name='query')
     features = create_w2v_feature(features, collection, queries)
     features = create_tfidf_feature(features, collection, queries)
+    features = create_bert_feature(features, collection, queries)
     features = create_glove_feature(features, collection, queries)
     features = create_jaccard_feature(features, collection, queries)
     features = create_sentence_features(features, collection, queries)
