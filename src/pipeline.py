@@ -43,18 +43,18 @@ class Pipeline(object):
 
     def setup(self, datasets: list = None, path: str = 'data/TREC_Passage'):
         if datasets is None:
-            datasets = ['collection.tar.gz', 'queries.tar.gz', 'msmarco-test2019-queries.tsv.gz',
+            datasets = ['collection.tsv', 'queries.train.tsv', 'msmarco-test2019-queries.tsv',
                         '2019qrels-pass.txt', 'qidpidtriples.train.full.2.tsv']
 
         download_dataset(datasets)
 
-        if 'collection.tar.gz' in datasets:
+        if 'collection.tsv' in datasets:
             self.collection = import_collection(path)
         if 'qidpidtriples.train.full.2.tsv' in datasets:
             self.features = import_training_set(path, list(self.collection['pID']))
         if '2019qrels-pass.txt' in datasets:
             self.qrels = import_qrels(path, list(self.collection['pID']))
-        if 'queries.tar.gz' or 'msmarco-test2019-queries.tsv' in datasets:
+        if 'queries.train.tsv' or 'msmarco-test2019-queries.tsv' in datasets:
             self.queries, self.queries_test = import_queries(path, list(self.features['qID']), list(self.qrels['qID']))
 
         return self.save()

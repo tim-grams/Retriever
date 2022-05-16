@@ -15,20 +15,36 @@ def download_dataset(datasets: list = None, path: str = "data/TREC_Passage"):
     assert datasets is not None, "No dataset selected"
 
     links = {
-        'collection.tar.gz': "https://msmarco.blob.core.windows.net/msmarcoranking/collection.tar.gz",
-        'queries.tar.gz': "https://msmarco.blob.core.windows.net/msmarcoranking/queries.tar.gz",
+        'collection.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/collection.tar.gz",
+        'queries.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/queries.tar.gz",
         'qrels.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/qrels.train.tsv",
-        'qidpidtriples.train.full.2.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/qidpidtriples.train.full.2.tsv',
-        'msmarco-test2019-queries.tsv.gz': 'https://msmarco.blob.core.windows.net/msmarcoranking/msmarco-test2019-queries.tsv.gz',
+        'qidpidtriples.train.full.2.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/qidpidtriples.train.full.2.tsv.gz',
+        'msmarco-test2019-queries.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/msmarco-test2019-queries.tsv.gz',
         '2019qrels-pass.txt': 'https://trec.nist.gov/data/deep/2019qrels-pass.txt'
+    }
+
+    zip_links = {
+        'collection.tsv': 'collection.tar.gz',
+        'queries.train.tsv': 'queries.tar.gz',
+        'qrels.train.tsv': 'qrels.train.tsv',
+        'qidpidtriples.train.full.2.tsv': 'qidpidtriples.train.full.2.tsv.gz',
+        'msmarco-test2019-queries.tsv': 'msmarco-test2019-queries.tsv.gz',
+        '2019qrels-pass.txt': '2019qrels-pass.txt'
     }
 
     check_path_exists(path)
 
     for dataset in datasets:
         filepath = os.path.join(path, dataset)
-        download(links[dataset], path) if not os.path.exists(filepath) else LOGGER.debug(f'{dataset} already exists')
-        unzip(filepath)
+        zippath = os.path.join(path, zip_links[dataset])
+        
+        if(not os.path.exists(zippath) and not os.path.exists(filepath)):
+            download(links[dataset], path)
+        else:
+            LOGGER.debug(f'{dataset} archive already exists')
+
+        unzip(os.path.join(path, zip_links[dataset])) if not os.path.exists(filepath) else LOGGER.debug(f'{dataset} already exists')
+        
 
 
 def download(remote_url: str = None, path: str = None):
@@ -81,7 +97,7 @@ def import_queries(path: str = "data/TREC_Passage", queries: list = None, test_q
     filepath = os.path.join(path, 'queries.train.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
-        download_dataset(["queries.tar.gz"], path)
+        download_dataset(["queries.train.tsv"], path)
 
     col_names = ["qID", "Query"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
@@ -91,7 +107,7 @@ def import_queries(path: str = "data/TREC_Passage", queries: list = None, test_q
     filepath = os.path.join(path, 'msmarco-test2019-queries.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
-        download_dataset(["msmarco-test2019-queries.tsv.gz"], path)
+        download_dataset(["msmarco-test2019-queries.tsv"], path)
 
     col_names = ["qID", "Query"]
     test_df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
@@ -104,7 +120,7 @@ def import_collection(path: str = "data/TREC_Passage", samples: int = 5000):
     filepath = os.path.join(path, 'collection.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
-        download_dataset(['collection.tar.gz'], path)
+        download_dataset(['collection.tsv'], path)
 
     col_names = ["pID", "Passage"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
