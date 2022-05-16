@@ -1,29 +1,57 @@
 from gensim.models import Word2Vec
+from src.utils.utils import check_path_exists, save, load
 import numpy as np
+import pandas as pd
+import os
 
 
 class word2vec(object):
+    is_fit = False
     is_transform = False
 
     def __init__(self, vector_size, min_count):
         self.vector_size = vector_size  # Dimensionality of the feature vectors
         self.min_count = min_count  # Ignores all words with lower total absolute frequency
 
-        self.embedding = Word2Vec(vector_size=self.vector_size, window=5,
-                                  min_count=self.min_count, workers=4)
+        self.embedding = Word2Vec(vector_size=self.vector_size, window=5, min_count=self.min_count, workers=4)
 
-    def vocabular(self, text_in_tokens):
+    def fit(self, text_in_tokens):
         self.embedding.build_vocab(text_in_tokens)
-
-    def transform(self, text_in_tokens):
-        self.vocabular(text_in_tokens)
-
         self.embedding.train(text_in_tokens, total_examples=self.embedding.corpus_count, epochs=self.embedding.epochs)
+        self.is_fit = True
+
+        return self
+
+    def transform(self, text_in_tokens: pd.Series, store: str = None):
+        text_in_tokens = [arr.tolist() for arr in text_in_tokens]
+        if self.is_fit is False:
+            self.fit(text_in_tokens)    
+
         self.is_transform = True
+        
+        w = self.get_wv()
 
-        return self.embedding.wv.vectors
+        embeddings = []
+        missing = []
+        for sentence in text_in_tokens:
+            sen = []
+            for word in sentence:
+                try:
+                    sen.append(w[word])
+                except KeyError:
+                    #print(word + ' not in vocabular')
+                    missing.append(word)
+                    sen.append(np.zeros(100))
 
-    # Additional Methods
+            embeddings.append(np.array(sen).sum(axis=0))
+        print(str(len(missing)) + ' Unknown words replaced with zero vecs\n')
+
+        if store is not None:
+            check_path_exists(os.path.dirname(store))
+            save(embeddings, store)
+
+        return embeddings
+
     def get_wv(self):
         assert self.is_transform is not False, 'You need to use .transform() first'
 

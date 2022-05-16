@@ -35,11 +35,9 @@ def download(remote_url: str = None, path: str = None):
     assert remote_url is not None, "No URL given"
     assert path is not None, "Specify local path"
 
-    # Construct paths
     file_name = remote_url.rsplit("/", 1)[-1]
     file_path = os.path.join(path, file_name)
 
-    # Get Data and Save on disk (streaming bc large file sizes, so we don't run out of memory)
     LOGGER.info("Start Downloading Data")
     response = requests.get(remote_url, stream=True)
     total_bytesize = int(response.headers.get('content-length', 0))
@@ -66,7 +64,7 @@ def unzip(file: str = None):
         with tarfile.open(file) as tar:
             tar.extractall(path=os.path.dirname(file))
 
-        #os.remove(file)
+        os.remove(file)
         LOGGER.info("unzipping successful")
 
     elif file.endswith(".gz"):
@@ -75,7 +73,7 @@ def unzip(file: str = None):
             with open(os.path.join(os.path.dirname(file), file[:-3]), "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
-        #os.remove(file)
+        os.remove(file)
         LOGGER.info("unzipping successful")
 
 
@@ -139,7 +137,7 @@ def import_training_set(path: str = "data/TREC_Passage", collection: list = None
     if collection is not None:
         df = df[(df['positive'].isin(collection)) & (df['negative'].isin(collection))].reset_index(drop=True)
     return pd.DataFrame({
-                'qID': pd.concat([df['qID'], df['qID']]),
-                'pID': pd.concat([df['positive'], df['negative']]),
-                'y': [1] * len(df) + [0] * len(df)
-            }).drop_duplicates()
+        'qID': pd.concat([df['qID'], df['qID']]),
+        'pID': pd.concat([df['positive'], df['negative']]),
+        'y': [1] * len(df) + [0] * len(df)
+    }).drop_duplicates()
