@@ -26,10 +26,16 @@ class word2vec(object):
 
         return self
 
+    def update(self, new_text_in_tokens):
+        self.embedding.build_vocab(new_text_in_tokens, update=True)
+        self.embedding.train(new_text_in_tokens, total_examples=self.embedding.corpus_count, epochs=self.embedding.epochs)
+
     def transform(self, text_in_tokens: pd.Series, store: str = None):
         text_in_tokens = [arr.tolist() for arr in text_in_tokens]
         if self.is_fit is False:
-            self.fit(text_in_tokens)    
+            self.fit(text_in_tokens)
+        else:
+            self.update(text_in_tokens)
 
         self.is_transform = True
         
@@ -48,7 +54,7 @@ class word2vec(object):
                     sen.append(np.zeros(100))
 
             embeddings.append(np.array(sen).sum(axis=0))
-        print(str(len(missing)) + ' Unknown words replaced with zero vecs\n')
+        #print(str(len(missing)) + ' Unknown words replaced with zero vecs\n')
 
         if store is not None:
             check_path_exists(os.path.dirname(store))
