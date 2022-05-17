@@ -37,14 +37,14 @@ def download_dataset(datasets: list = None, path: str = "data/TREC_Passage"):
     for dataset in datasets:
         filepath = os.path.join(path, dataset)
         zippath = os.path.join(path, zip_links[dataset])
-        
-        if(not os.path.exists(zippath) and not os.path.exists(filepath)):
+
+        if (not os.path.exists(zippath) and not os.path.exists(filepath)):
             download(links[dataset], path)
         else:
             LOGGER.debug(f'{dataset} archive already exists')
 
-        unzip(os.path.join(path, zip_links[dataset])) if not os.path.exists(filepath) else LOGGER.debug(f'{dataset} already exists')
-        
+        unzip(os.path.join(path, zip_links[dataset])) if not os.path.exists(filepath) else LOGGER.debug(
+            f'{dataset} already exists')
 
 
 def download(remote_url: str = None, path: str = None):

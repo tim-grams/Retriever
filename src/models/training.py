@@ -1,40 +1,18 @@
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 from sklearn.naive_bayes import GaussianNB
 import numpy as np
-from src.data.preprocessing import pca
+from src.data.preprocessing import split_and_scale
 from src.utils.utils import save, load, check_path_exists
 import os
 import json
+from skopt.utils import use_named_args
+from skopt import gp_minimize
 
 
 class Evaluation(object):
 
-    def __init__(self,
-                 X_y_train: pd.DataFrame,
-                 X_test: pd.DataFrame,
-                 qrels: pd.DataFrame,
-                 k: int = 50,
-                 components_pca: int = 0,
-                 previous_results: str = 'data/results/results.pkl'):
-        self.qrels = qrels
-        self.k = k
-        self.components_pca = components_pca
+    def __init__(self, previous_results: str = 'data/results/results.pkl'):
         self.previous_results = previous_results
-
-        self.y = X_y_train['y']
-        X = X_y_train.drop(columns=['qID', 'pID', 'y'])
-        self.test_pair = X_test[['pID', 'qID']]
-        X_test = X_test.drop(columns=['pID', 'qID'])
-
-        scaler = StandardScaler()
-        data = pd.DataFrame(scaler.fit_transform(pd.concat([X, X_test])))
-
-        if components_pca > 0:
-            data = pca(data, components_pca)
-
-        self.X = data.loc[:len(X) - 1]
-        self.X_test = data.loc[len(X):]
 
         if os.path.exists(previous_results):
             self.results = load(previous_results)
@@ -42,46 +20,133 @@ class Evaluation(object):
             check_path_exists(os.path.dirname(previous_results))
             self.results = pd.DataFrame()
 
-    def __call__(self, model=GaussianNB()):
-        self.compute_metrics(model)
+    def __call__(self,
+                 X_y_train: pd.DataFrame,
+                 X_test: pd.DataFrame,
+                 qrels: pd.DataFrame,
+                 k: int = 50,
+                 components_pca: int = 0,
+                 model=GaussianNB()):
+        X, y, X_test, test_pair = split_and_scale(X_y_train, X_test, components_pca)
+        mrr = self.compute_metrics(model,
+                                   X,
+                                   y,
+                                   X_test,
+                                   test_pair,
+                                   qrels,
+                                   k,
+                                   components_pca)
+        print(f'MRR: {mrr}')
 
-    def compute_metrics(self, model):
-        model.fit(self.X, self.y)
-        confidences = pd.DataFrame(model.predict_proba(self.X_test))[1]
+    def hyperparameter_optimization(self, model, search_space,
+                                    X_y_train: pd.DataFrame,
+                                    X_test: pd.DataFrame,
+                                    qrels: pd.DataFrame,
+                                    k: int = 50,
+                                    components_pca: int = 0,
+                                    trials: int = 50
+                                    ):
+
+        @use_named_args(search_space)
+        def evaluate(**params):
+            model.set_params(**params)
+            return self.compute_metrics(model, X, y, X_test, test_pair, qrels, k, components_pca)
+
+        X, y, X_test, test_pair = split_and_scale(X_y_train, X_test, components_pca)
+        best_result = gp_minimize(evaluate, search_space, n_calls=trials)
+        print(f'Best MRR: {best_result.fun}')
+        print(f'Best Hyperparameters: {best_result.x}')
+        print(f'MRR on test set: ')
+
+        return best_result.fun
+
+    def feature_selection(self, model, search_space,
+                          X_y_train: pd.DataFrame,
+                          X_test: pd.DataFrame,
+                          qrels: pd.DataFrame,
+                          k: int = 50,
+                          components_pca: int = 0
+                          ):
+        features = list(X_y_train.drop(columns=['qID', 'pID', 'y']).columns)
+        added_columns = []
+
+        current_best = (None, 0)
+        current_performance = -1
+        while len(added_columns) < len(features):
+            for feature in features:
+                performance = self.hyperparameter_optimization(model,
+                                                               search_space,
+                                                               X_y_train[['qID', 'pID', 'y'] + added_columns + [feature]],
+                                                               X_test[['qID', 'pID', 'y'] + added_columns + [feature]],
+                                                               qrels,
+                                                               k,
+                                                               components_pca)
+                if performance > current_performance and performance > current_best[1]:
+                    current_best = (feature, performance)
+            if current_best[0] is not None:
+                current_performance = current_best[1]
+                added_columns.append(current_best[0])
+            else:
+                break
+            current_best = (None, 0)
+            print(f'Current features: {added_columns}')
+            print(f'Current Performance: {current_performance}')
+
+        print(f'Best feature combination: {added_columns}')
+        print(f'MRR: {current_performance}')
+
+        return added_columns
+
+    def compute_metrics(self, model,
+                        X: pd.DataFrame,
+                        y,
+                        X_test,
+                        test_pair,
+                        qrels: pd.DataFrame,
+                        k: int = 50,
+                        components_pca: int = 0,
+                        save_result: bool = False):
+        model.fit(X, y)
+        confidences = pd.DataFrame(model.predict_proba(X_test))[1]
 
         results = pd.DataFrame({
             'confidence': confidences,
-            'qID': list(self.test_pair['qID']),
-            'pID': list(self.test_pair['pID']),
+            'qID': list(test_pair['qID']),
+            'pID': list(test_pair['pID']),
             'relevant': [0] * len(confidences)
         })
-        for i, qrel in self.qrels.iterrows():
+        for i, qrel in qrels.iterrows():
             results.loc[((results['pID'] == qrel['pID']) & (results['qID'] == qrel['qID'])), 'relevant'] = qrel[
                 'feedback']
 
+        mrr = self.mean_reciprocal_rank(results)
         map = self.mean_average_precision_score(results)
         ndcg = self.normalized_discounted_cumulative_gain(results)
         metrics = self.metrics(results)
-        k_metrics = self.metrics(results, self.k)
+        k_metrics = self.metrics(results, k)
 
-        self.results = pd.concat([self.results,
-                                            pd.DataFrame({'model': str(model),
-                                                          'hyperparameters': json.dumps(model.get_params()),
-                                                          'sampling': len(self.X),
-                                                          'pca': self.components_pca,
-                                                          'MAP': map,
-                                                          'nDCG': ndcg,
-                                                          'accuracy': metrics[0],
-                                                          'precision': metrics[1],
-                                                          'recall': metrics[2],
-                                                          'f1': metrics[3],
-                                                          f'accuracy@{self.k}': k_metrics[0],
-                                                          f'precision@{self.k}': k_metrics[1],
-                                                          f'recall@{self.k}': k_metrics[2],
-                                                          f'f1@{self.k}': k_metrics[3]
-                                                          }, index=[0])]).reset_index(drop=True)
+        if save_result:
+            self.results = pd.concat([self.results,
+                                      pd.DataFrame({'model': str(model),
+                                                    'hyperparameters': json.dumps(model.get_params()),
+                                                    'features': json.dumps(list(X.columns)),
+                                                    'sampling': len(X),
+                                                    'pca': components_pca,
+                                                    'MRR': mrr,
+                                                    'MAP': map,
+                                                    'nDCG': ndcg,
+                                                    'accuracy': metrics[0],
+                                                    'precision': metrics[1],
+                                                    'recall': metrics[2],
+                                                    'f1': metrics[3],
+                                                    f'accuracy@{k}': k_metrics[0],
+                                                    f'precision@{k}': k_metrics[1],
+                                                    f'recall@{k}': k_metrics[2],
+                                                    f'f1@{k}': k_metrics[3]
+                                                    }, index=[0])]).reset_index(drop=True)
+            save(self.results, self.previous_results)
 
-        save(self.results, self.previous_results)
+        return mrr
 
     def calculate_ranks(self, results: pd.DataFrame):
         ranks = results.sort_values('confidence', ascending=False)
@@ -139,3 +204,12 @@ class Evaluation(object):
         for qID in qIDs:
             sum += self.normalized_discounted_cumulative_gain(results[results['qID'] == qID])
         return sum / len(qIDs)
+
+    def mean_reciprocal_rank(self, results: pd.DataFrame):
+        ranks = self.calculate_ranks(results)
+        ranks = ranks.sort_values('rank', ascending=False).groupby('qID').head(1)
+
+        sum = 0
+        for index, result in ranks.iterrows():
+            sum += (1 / result['rank'])
+        return sum / len(ranks)

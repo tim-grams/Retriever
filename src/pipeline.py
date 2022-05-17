@@ -158,7 +158,7 @@ class Pipeline(object):
 
         return self.save()
 
-    def evaluate(self, model: str = 'nb', pca: int = 0):
+    def create_test_features(self):
         features_test = pd.DataFrame()
         for index, query in self.queries_test.iterrows():
             features_test = pd.concat([features_test, pd.DataFrame({
@@ -167,13 +167,38 @@ class Pipeline(object):
             })])
         features_test = create_all(features_test, self.collection, self.queries_test)
 
-        evaluation = Evaluation(self.features, features_test, self.qrels, 50, pca)
+        return features_test
+
+    def evaluate(self, model: str = 'nb', pca: int = 0, search_space: list = None):
+        features_test = self.create_test_features()
+
+        evaluation = Evaluation()
         if model == 'nb':
-            evaluation(GaussianNB())
+            model_to_test = GaussianNB()
         elif model == 'lr':
-            evaluation(LogisticRegression())
-        elif model == 'mlp':
-            evaluation(MLPClassifier())
+            model_to_test = LogisticRegression()
+        else:
+            model_to_test = MLPClassifier()
+
+        if search_space is not None:
+            evaluation.hyperparameter_optimization(model_to_test, search_space, self.features,
+                                                   features_test, self.qrels, 50, pca, 50)
+        else:
+            evaluation(self.features, features_test, self.qrels, 50, pca, model_to_test)
+
+    def forward_selection(self, model: str = 'nb', pca: int = 0, search_space: list = None):
+        features_test = self.create_test_features()
+
+        evaluation = Evaluation()
+        if model == 'nb':
+            model_to_test = GaussianNB()
+        elif model == 'lr':
+            model_to_test = LogisticRegression()
+        else:
+            model_to_test = MLPClassifier()
+
+        evaluation.feature_selection(model_to_test, search_space, self.features,
+                                     features_test, self.qrels, 50, pca)
 
     def save(self, path: str = 'data/processed'):
         check_path_exists(path)
