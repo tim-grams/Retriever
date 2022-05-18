@@ -2,6 +2,7 @@ import pandas as pd
 from tqdm import tqdm
 import logging
 import numpy as np
+import nltk
 from src.embeddings.bert import Bert
 from src.embeddings.tfidf import TFIDF
 from src.embeddings.glove import Glove
@@ -10,6 +11,8 @@ from src.features.features import cosine_similarity_score, euclidean_distance_sc
     words, relative_difference, characters, difference, subjectivity, polarisation, POS
 from src.utils.utils import load
 from src.features.bm25 import BM25
+
+nltk.download('averaged_perceptron_tagger')
 
 tqdm.pandas()
 LOGGER = logging.getLogger('generator')
