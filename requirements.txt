@@ -8,3 +8,4 @@ textblob
 gensim
 sentence_transformers
 flair
+scikit-optimize

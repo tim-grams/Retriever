@@ -74,10 +74,13 @@ class Evaluation(object):
         current_performance = -1
         while len(added_columns) < len(features):
             for feature in features:
+                if feature in added_columns:
+                    continue
+                print(f'Testing features: {added_columns + [feature]}')
                 performance = self.hyperparameter_optimization(model,
                                                                search_space,
                                                                X_y_train[['qID', 'pID', 'y'] + added_columns + [feature]],
-                                                               X_test[['qID', 'pID', 'y'] + added_columns + [feature]],
+                                                               X_test[['qID', 'pID'] + added_columns + [feature]],
                                                                qrels,
                                                                k,
                                                                components_pca)
@@ -119,11 +122,14 @@ class Evaluation(object):
             results.loc[((results['pID'] == qrel['pID']) & (results['qID'] == qrel['qID'])), 'relevant'] = qrel[
                 'feedback']
 
-        mrr = self.mean_reciprocal_rank(results)
-        map = self.mean_average_precision_score(results)
-        ndcg = self.normalized_discounted_cumulative_gain(results)
-        metrics = self.metrics(results)
-        k_metrics = self.metrics(results, k)
+        try:
+            mrr = self.mean_reciprocal_rank(results)
+            map = self.mean_average_precision_score(results)
+            ndcg = self.normalized_discounted_cumulative_gain(results)
+            metrics = self.metrics(results)
+            k_metrics = self.metrics(results, k)
+        except ZeroDivisionError:
+            print(results)
 
         if save_result:
             self.results = pd.concat([self.results,
@@ -157,6 +163,7 @@ class Evaluation(object):
 
     def average_precision_score(self, results: pd.DataFrame):
         ranks = self.calculate_ranks(results)
+        print(ranks)
 
         sum = 0
         for index, data in ranks.iterrows():
@@ -180,12 +187,18 @@ class Evaluation(object):
         fn = len(results[(results['confidence'] < 0.5) & (results['relevant'] >= 1)])
 
         accuracy = (tp + tn) / (tp + fp + tn + fn)
-        precision = tp / (tp + fp)
+        try:
+            precision = tp / (tp + fp)
+        except ZeroDivisionError:
+            precision = np.nan
         try:
             recall = tp / (tp + fn)
         except ZeroDivisionError:
             recall = np.nan
-        f_score = (2 * precision * recall) / (precision + recall)
+        try:
+            f_score = (2 * precision * recall) / (precision + recall)
+        except ZeroDivisionError:
+            f_score = np.nan
         return accuracy, precision, recall, f_score
 
     def normalized_discounted_cumulative_gain(self, results: pd.DataFrame):

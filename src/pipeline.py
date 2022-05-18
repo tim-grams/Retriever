@@ -1,4 +1,4 @@
-from src.data.dataset import download_dataset, import_queries, import_collection, import_qrels, import_training_set
+from src.data.dataset import download_dataset, import_test_queries, import_queries, import_collection, import_qrels, import_training_set
 import pandas as pd
 from tqdm import tqdm
 from src.data.preprocessing import preprocess
@@ -48,14 +48,16 @@ class Pipeline(object):
 
         download_dataset(datasets)
 
-        if 'collection.tsv' in datasets:
-            self.collection = import_collection(path)
-        if 'qidpidtriples.train.full.2.tsv' in datasets:
-            self.features = import_training_set(path, list(self.collection['pID']))
+        if 'msmarco-test2019-queries.tsv' in datasets:
+            self.queries_test = import_test_queries(path, 5)
         if '2019qrels-pass.txt' in datasets:
-            self.qrels = import_qrels(path, list(self.collection['pID']))
-        if 'queries.train.tsv' or 'msmarco-test2019-queries.tsv' in datasets:
-            self.queries, self.queries_test = import_queries(path, list(self.features['qID']), list(self.qrels['qID']))
+            self.qrels = import_qrels(path, list(self.queries_test['qID']))
+        if 'qidpidtriples.train.full.2.tsv' in datasets:
+            self.features = import_training_set(path, 200)
+        if 'queries.train.tsv' in datasets:
+            self.queries = import_queries(path, list(self.features['qID']))
+        if 'collection.tsv' in datasets:
+            self.collection = import_collection(path, list(self.qrels['pID']), list(self.features['pID']), 0)
 
         return self.save()
 

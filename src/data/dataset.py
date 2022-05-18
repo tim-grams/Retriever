@@ -93,17 +93,7 @@ def unzip(file: str = None):
         LOGGER.info("unzipping successful")
 
 
-def import_queries(path: str = "data/TREC_Passage", queries: list = None, test_queries: list = None):
-    filepath = os.path.join(path, 'queries.train.tsv')
-    if not os.path.exists(filepath):
-        LOGGER.debug("File not there, downloading a new one")
-        download_dataset(["queries.train.tsv"], path)
-
-    col_names = ["qID", "Query"]
-    df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
-    if queries is not None:
-        df = df[df['qID'].isin(queries)].reset_index(drop=True)
-
+def import_test_queries(path: str = "data/TREC_Passage", samples: int = 50):
     filepath = os.path.join(path, 'msmarco-test2019-queries.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -111,12 +101,25 @@ def import_queries(path: str = "data/TREC_Passage", queries: list = None, test_q
 
     col_names = ["qID", "Query"]
     test_df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
-    if queries is not None:
-        test_df = test_df[test_df['qID'].isin(test_queries)].reset_index(drop=True)
-    return df, test_df
+    test_df = test_df.sample(samples, random_state=42).reset_index(drop=True)
+    return test_df
 
 
-def import_collection(path: str = "data/TREC_Passage", samples: int = 5000):
+def import_queries(path: str = "data/TREC_Passage", collection: list = None):
+    filepath = os.path.join(path, 'queries.train.tsv')
+    if not os.path.exists(filepath):
+        LOGGER.debug("File not there, downloading a new one")
+        download_dataset(["queries.train.tsv"], path)
+
+    col_names = ["qID", "Query"]
+    df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
+    if collection is not None:
+        df = df[df['qID'].isin(collection)].reset_index(drop=True)
+
+    return df
+
+
+def import_collection(path: str = "data/TREC_Passage", qrels: list = None, triples: list = None, samples: int = 0):
     filepath = os.path.join(path, 'collection.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -124,11 +127,16 @@ def import_collection(path: str = "data/TREC_Passage", samples: int = 5000):
 
     col_names = ["pID", "Passage"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
-    df = df.sample(samples, random_state=42).reset_index(drop=True)
+    if samples > 0:
+        sampling = df.sample(samples, random_state=42).reset_index(drop=True)
+    if qrels is not None and triples is not None:
+        df = df[(df['pID'].isin(qrels)) | (df['pID'].isin(triples))].reset_index(drop=True)
+    if samples > 0:
+        df = pd.concat([sampling, df]).reset_index(drop=True)
     return df
 
 
-def import_qrels(path: str = "data/TREC_Passage", collection: list = None):
+def import_qrels(path: str = "data/TREC_Passage", queries: list = None):
     filepath = os.path.join(path, '2019qrels-pass.txt')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -137,12 +145,12 @@ def import_qrels(path: str = "data/TREC_Passage", collection: list = None):
     col_names = ["qID", "0", "pID", "feedback"]
     df_test = pd.read_csv(filepath, sep=" ", names=col_names, header=None)
     df_test = df_test[df_test['feedback'] >= 1]
-    if collection is not None:
-        df_test = df_test[df_test['pID'].isin(collection)].reset_index(drop=True)
+    if queries is not None:
+        df_test = df_test[df_test['qID'].isin(queries)].reset_index(drop=True)
     return df_test.drop(columns=['0'])
 
 
-def import_training_set(path: str = "data/TREC_Passage", collection: list = None):
+def import_training_set(path: str = "data/TREC_Passage", samples: int = 200):
     filepath = os.path.join(path, 'qidpidtriples.train.full.2.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -150,8 +158,7 @@ def import_training_set(path: str = "data/TREC_Passage", collection: list = None
 
     col_names = ["qID", "positive", "negative"]
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
-    if collection is not None:
-        df = df[(df['positive'].isin(collection)) & (df['negative'].isin(collection))].reset_index(drop=True)
+    df = df.sample(samples, random_state=42).reset_index(drop=True)
     return pd.DataFrame({
         'qID': pd.concat([df['qID'], df['qID']]),
         'pID': pd.concat([df['positive'], df['negative']]),
