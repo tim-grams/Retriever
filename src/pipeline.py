@@ -67,18 +67,18 @@ class Pipeline(object):
 
         return self.save()
 
-    def preprocess(self):
+    def preprocess(self, expansion = False):
         LOGGER.info('Preprocessing collection')
         self.collection['preprocessed'] = preprocess(self.collection.Passage)
 
         LOGGER.info('Preprocessing queries')
-        self.queries['preprocessed'] = preprocess(self.queries.Query)
+        self.queries['preprocessed'] = preprocess(self.queries.Query, expansion)
 
         LOGGER.info('Preprocessing validation queries')
-        self.queries_val['preprocessed'] = preprocess(self.queries_val.Query)
+        self.queries_val['preprocessed'] = preprocess(self.queries_val.Query, expansion)
 
         LOGGER.info('Preprocessing test queries')
-        self.queries_test['preprocessed'] = preprocess(self.queries_test.Query)
+        self.queries_test['preprocessed'] = preprocess(self.queries_test.Query, expansion)
 
         return self.save()
 

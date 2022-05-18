@@ -1,6 +1,7 @@
 import string
 import nltk
 from nltk.corpus import stopwords
+from nltk.corpus import wordnet
 from nltk.stem import WordNetLemmatizer
 from nltk.stem.porter import PorterStemmer
 import pandas as pd
@@ -8,6 +9,7 @@ from sklearn.decomposition import PCA
 import logging
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+import random
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -16,13 +18,22 @@ nltk.download('wordnet')
 LOGGER = logging.getLogger('Preprocessor')
 
 
-def preprocess(data: pd.Series):
+def preprocess(data: pd.Series, expansion = False):
     LOGGER.info('Preprocessing ...')
-    return data.progress_apply(lambda text: np.array(
-        stemming(
-            removal(
-                tokenization(text)
-            ))))
+
+    if expansion:
+        return data.progress_apply(lambda text: np.array(
+            stemming(
+                query_expansion(
+                            removal(
+                                tokenization(text)
+                )))))
+    else:
+        return data.progress_apply(lambda text: np.array(
+            stemming(
+                removal(
+                    tokenization(text)
+                ))))
 
 
 def tokenization(text: str):
@@ -72,3 +83,32 @@ def split_and_scale(X_y_train, X_test, components_pca):
     X = data.loc[:len(X) - 1]
     X_test = data.loc[len(X):]
     return X, y, X_test, test_pair
+
+def query_expansion(tokens: pd.Series, sample_size = 2):
+    token_list = tokens.tolist()
+
+    new_tokenlist = []
+    for token in token_list:
+        synonyms = get_synonyms(token, sample_size)
+        
+        new_tokenlist.append(token)
+        if len(synonyms) > 0:
+            new_tokenlist.extend(synonyms)
+
+    return pd.Series(new_tokenlist)
+        
+def get_synonyms(phrase, sample_size):
+    synonyms = []
+    for syn in wordnet.synsets(phrase):
+        for l in syn.lemmas():
+            if '_' not in l.name() and l.name() != phrase:
+                synonyms.append(l.name())
+
+
+    synonym_set = set(synonyms)
+    
+    if (sample_size > len(synonym_set)):
+        return list(synonym_set)
+    else:
+        synonym_set_sampled = random.sample(synonym_set, sample_size)
+        return list(synonym_set_sampled)
