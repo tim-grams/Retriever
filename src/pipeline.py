@@ -1,4 +1,4 @@
-from src.data.dataset import download_dataset, import_test_queries, import_queries, import_collection, import_qrels, import_training_set
+from src.data.dataset import download_dataset, import_val_test_queries, import_queries, import_collection, import_qrels, import_training_set
 import pandas as pd
 from tqdm import tqdm
 from src.data.preprocessing import preprocess
@@ -24,18 +24,24 @@ class Pipeline(object):
 
     collection = None
     queries = None
+    queries_val = None
     queries_test = None
-    qrels = None
+    qrels_val = None
+    qrels_test = None
     features = pd.DataFrame()
 
-    def __init__(self, collection: str = None, queries: str = None, queries_test: str = None,
-                 features: str = None, qrels: str = None):
-        if qrels is not None:
-            self.qrels = pd.read_pickle(qrels)
+    def __init__(self, collection: str = None, queries: str = None, queries_val: str = None, queries_test: str = None,
+                 features: str = None, qrels_val: str = None, qrels_test: str = None):
+        if qrels_val is not None:
+            self.qrels_val = pd.read_pickle(qrels_val)
+        if qrels_test is not None:
+            self.qrels_test = pd.read_pickle(qrels_test)
         if collection is not None:
             self.collection = pd.read_pickle(collection)
         if queries is not None:
             self.queries = pd.read_pickle(queries)
+        if queries_val is not None:
+            self.queries_val = pd.read_pickle(queries_val)
         if queries_test is not None:
             self.queries_test = pd.read_pickle(queries_test)
         if features is not None:
@@ -43,21 +49,21 @@ class Pipeline(object):
 
     def setup(self, datasets: list = None, path: str = 'data/TREC_Passage'):
         if datasets is None:
-            datasets = ['collection.tsv', 'queries.train.tsv', 'msmarco-test2019-queries.tsv',
-                        '2019qrels-pass.txt', 'qidpidtriples.train.full.2.tsv']
+            datasets = ['collection.tsv', 'queries.train.tsv', 'msmarco-test2019-queries.tsv', '2019qrels-pass.txt',
+                        '2020qrels-pass.txt', 'qidpidtriples.train.full.2.tsv', 'msmarco-test2020-queries.tsv']
 
         download_dataset(datasets)
 
-        if 'msmarco-test2019-queries.tsv' in datasets:
-            self.queries_test = import_test_queries(path, 5)
-        if '2019qrels-pass.txt' in datasets:
-            self.qrels = import_qrels(path, list(self.queries_test['qID']))
+        if 'msmarco-test2019-queries.tsv' or 'msmarco-test2020-queries.tsv' in datasets:
+            self.queries_val, self.queries_test = import_val_test_queries(path, 5)
+        if '2019qrels-pass.txt' or '2019qrels-pass.txt' in datasets:
+            self.qrels_val, self.qrels_test = import_qrels(path, list(self.queries_val['qID']), list(self.queries_test['qID']))
         if 'qidpidtriples.train.full.2.tsv' in datasets:
             self.features = import_training_set(path, 200)
         if 'queries.train.tsv' in datasets:
             self.queries = import_queries(path, list(self.features['qID']))
         if 'collection.tsv' in datasets:
-            self.collection = import_collection(path, list(self.qrels['pID']), list(self.features['pID']), 0)
+            self.collection = import_collection(path, list(self.qrels_val['pID']), list(self.qrels_test['pID']), list(self.features['pID']), 0)
 
         return self.save()
 
@@ -67,6 +73,9 @@ class Pipeline(object):
 
         LOGGER.info('Preprocessing queries')
         self.queries['preprocessed'] = preprocess(self.queries.Query)
+
+        LOGGER.info('Preprocessing validation queries')
+        self.queries_val['preprocessed'] = preprocess(self.queries_val.Query)
 
         LOGGER.info('Preprocessing test queries')
         self.queries_test['preprocessed'] = preprocess(self.queries_test.Query)
@@ -78,6 +87,7 @@ class Pipeline(object):
 
         tfidf, self.collection = create_tfidf_embeddings(self.collection, name='collection')
         tfidf, self.queries = create_tfidf_embeddings(self.queries, tfidf=tfidf, name='query')
+        tfidf, self.queries_val = create_tfidf_embeddings(self.queries_val, tfidf=tfidf, name='query_val')
         tfidf, self.queries_test = create_tfidf_embeddings(self.queries_test, tfidf=tfidf, name='query_test')
 
         return self.save()
@@ -87,6 +97,7 @@ class Pipeline(object):
 
         w2v, self.collection = create_w2v_embeddings(self.collection, name='collection')
         w2v, self.queries = create_w2v_embeddings(self.queries, w2v=w2v, name='query')
+        w2v, self.queries_val = create_w2v_embeddings(self.queries_val, w2v=w2v, name='query_val')
         w2v, self.queries_test = create_w2v_embeddings(self.queries_test, w2v=w2v, name='query_test')
 
         return self.save()
@@ -101,6 +112,7 @@ class Pipeline(object):
 
         bert, self.collection = create_bert_embeddings(self.collection, name='collection')
         bert, self.queries = create_bert_embeddings(self.queries, bert=bert, name='query')
+        bert, self.queries_val = create_bert_embeddings(self.queries_val, bert=bert, name='query_val')
         bert, self.queries_test = create_bert_embeddings(self.queries_test, bert=bert, name='query_test')
 
     def create_glove_embeddings(self):
@@ -108,6 +120,7 @@ class Pipeline(object):
 
         glove, self.collection = create_glove_embeddings(self.collection, name='collection')
         glove, self.queries = create_glove_embeddings(self.queries, glove=glove, name='query')
+        glove, self.queries_val = create_glove_embeddings(self.queries_val, glove=glove, name='query_val')
         glove, self.queries_test = create_glove_embeddings(self.queries_test, glove=glove, name='query_test')
 
         return self.save()
@@ -171,8 +184,19 @@ class Pipeline(object):
 
         return features_test
 
+    def create_val_features(self):
+        features_val = pd.DataFrame()
+        for index, query in self.queries_val.iterrows():
+            features_val = pd.concat([features_val, pd.DataFrame({
+                'qID': [query['qID']] * len(self.collection),
+                'pID': self.collection['pID']
+            })])
+        features_val = create_all(features_val, self.collection, self.queries_val)
+
+        return features_val
+
     def evaluate(self, model: str = 'nb', pca: int = 0, search_space: list = None):
-        features_test = self.create_test_features()
+        features_test = self.create_val_features()
 
         evaluation = Evaluation()
         if model == 'nb':

@@ -20,7 +20,9 @@ def download_dataset(datasets: list = None, path: str = "data/TREC_Passage"):
         'qrels.train.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/qrels.train.tsv",
         'qidpidtriples.train.full.2.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/qidpidtriples.train.full.2.tsv.gz',
         'msmarco-test2019-queries.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/msmarco-test2019-queries.tsv.gz',
-        '2019qrels-pass.txt': 'https://trec.nist.gov/data/deep/2019qrels-pass.txt'
+        'msmarco-test2020-queries.tsv': 'https://msmarco.blob.core.windows.net/msmarcoranking/msmarco-test2020-queries.tsv.gz',
+        '2019qrels-pass.txt': 'https://trec.nist.gov/data/deep/2019qrels-pass.txt',
+        '2020qrels-pass.txt': 'https://trec.nist.gov/data/deep/2020qrels-pass.txt'
     }
 
     zip_links = {
@@ -29,7 +31,9 @@ def download_dataset(datasets: list = None, path: str = "data/TREC_Passage"):
         'qrels.train.tsv': 'qrels.train.tsv',
         'qidpidtriples.train.full.2.tsv': 'qidpidtriples.train.full.2.tsv.gz',
         'msmarco-test2019-queries.tsv': 'msmarco-test2019-queries.tsv.gz',
-        '2019qrels-pass.txt': '2019qrels-pass.txt'
+        'msmarco-test2020-queries.tsv': 'msmarco-test2020-queries.tsv.gz',
+        '2019qrels-pass.txt': '2019qrels-pass.txt',
+        '2020qrels-pass.txt': '2020qrels-pass.txt'
     }
 
     check_path_exists(path)
@@ -93,8 +97,17 @@ def unzip(file: str = None):
         LOGGER.info("unzipping successful")
 
 
-def import_test_queries(path: str = "data/TREC_Passage", samples: int = 50):
+def import_val_test_queries(path: str = "data/TREC_Passage", samples: int = 50):
     filepath = os.path.join(path, 'msmarco-test2019-queries.tsv')
+    if not os.path.exists(filepath):
+        LOGGER.debug("File not there, downloading a new one")
+        download_dataset(["msmarco-test2019-queries.tsv"], path)
+
+    col_names = ["qID", "Query"]
+    val_df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
+    val_df = val_df.sample(samples, random_state=42).reset_index(drop=True)
+
+    filepath = os.path.join(path, 'msmarco-test2020-queries.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
         download_dataset(["msmarco-test2019-queries.tsv"], path)
@@ -102,7 +115,7 @@ def import_test_queries(path: str = "data/TREC_Passage", samples: int = 50):
     col_names = ["qID", "Query"]
     test_df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
     test_df = test_df.sample(samples, random_state=42).reset_index(drop=True)
-    return test_df
+    return val_df, test_df
 
 
 def import_queries(path: str = "data/TREC_Passage", collection: list = None):
@@ -119,7 +132,7 @@ def import_queries(path: str = "data/TREC_Passage", collection: list = None):
     return df
 
 
-def import_collection(path: str = "data/TREC_Passage", qrels: list = None, triples: list = None, samples: int = 0):
+def import_collection(path: str = "data/TREC_Passage", qrels_val: list = None, qrels_test: list = None, triples: list = None, samples: int = 0):
     filepath = os.path.join(path, 'collection.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -129,25 +142,36 @@ def import_collection(path: str = "data/TREC_Passage", qrels: list = None, tripl
     df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
     if samples > 0:
         sampling = df.sample(samples, random_state=42).reset_index(drop=True)
-    if qrels is not None and triples is not None:
-        df = df[(df['pID'].isin(qrels)) | (df['pID'].isin(triples))].reset_index(drop=True)
+    if qrels_val is not None and qrels_test is not None and triples is not None:
+        df = df[(df['pID'].isin(qrels_val)) | (df['pID'].isin(qrels_test)) | (df['pID'].isin(triples))].reset_index(drop=True)
     if samples > 0:
         df = pd.concat([sampling, df]).reset_index(drop=True)
     return df
 
 
-def import_qrels(path: str = "data/TREC_Passage", queries: list = None):
+def import_qrels(path: str = "data/TREC_Passage", queries_val: list = None, queries_test: list = None):
     filepath = os.path.join(path, '2019qrels-pass.txt')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
         download_dataset(['2019qrels-pass.txt'], path)
 
     col_names = ["qID", "0", "pID", "feedback"]
+    df_val = pd.read_csv(filepath, sep=" ", names=col_names, header=None)
+    df_val = df_val[df_val['feedback'] >= 1]
+    if queries_val is not None:
+        df_val = df_val[df_val['qID'].isin(queries_val)].reset_index(drop=True)
+
+    filepath = os.path.join(path, '2020qrels-pass.txt')
+    if not os.path.exists(filepath):
+        LOGGER.debug("File not there, downloading a new one")
+        download_dataset(['2020qrels-pass.txt'], path)
+
+    col_names = ["qID", "0", "pID", "feedback"]
     df_test = pd.read_csv(filepath, sep=" ", names=col_names, header=None)
     df_test = df_test[df_test['feedback'] >= 1]
-    if queries is not None:
-        df_test = df_test[df_test['qID'].isin(queries)].reset_index(drop=True)
-    return df_test.drop(columns=['0'])
+    if queries_test is not None:
+        df_test = df_test[df_test['qID'].isin(queries_test)].reset_index(drop=True)
+    return df_val.drop(columns=['0']), df_test.drop(columns=['0'])
 
 
 def import_training_set(path: str = "data/TREC_Passage", samples: int = 200):
