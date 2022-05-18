@@ -54,16 +54,20 @@ class Pipeline(object):
 
         download_dataset(datasets)
 
-        if 'msmarco-test2019-queries.tsv' or 'msmarco-test2020-queries.tsv' in datasets:
-            self.queries_val, self.queries_test = import_val_test_queries(path, 5)
         if '2019qrels-pass.txt' or '2019qrels-pass.txt' in datasets:
-            self.qrels_val, self.qrels_test = import_qrels(path, list(self.queries_val['qID']), list(self.queries_test['qID']))
+            self.qrels_val, self.qrels_test = import_qrels(path, 20)
+        if 'msmarco-test2019-queries.tsv' or 'msmarco-test2020-queries.tsv' in datasets:
+            self.queries_val, self.queries_test = import_val_test_queries(path, list(self.qrels_val['qID']),
+                                                                          list(self.qrels_test['qID']))
         if 'qidpidtriples.train.full.2.tsv' in datasets:
             self.features = import_training_set(path, 200)
         if 'queries.train.tsv' in datasets:
             self.queries = import_queries(path, list(self.features['qID']))
         if 'collection.tsv' in datasets:
             self.collection = import_collection(path, list(self.qrels_val['pID']), list(self.qrels_test['pID']), list(self.features['pID']), 0)
+
+        self.queries_val = self.queries_val[self.queries_val['qID'].isin(self.qrels_val['qID'])].reset_index(drop=True)
+        self.queries_test = self.queries_test[self.queries_test['qID'].isin(self.qrels_test['qID'])].reset_index(drop=True)
 
         return self.save()
 
@@ -196,23 +200,6 @@ class Pipeline(object):
         return features_val
 
     def evaluate(self, model: str = 'nb', pca: int = 0, search_space: list = None):
-        features_test = self.create_val_features()
-
-        evaluation = Evaluation()
-        if model == 'nb':
-            model_to_test = GaussianNB()
-        elif model == 'lr':
-            model_to_test = LogisticRegression()
-        else:
-            model_to_test = MLPClassifier()
-
-        if search_space is not None:
-            evaluation.hyperparameter_optimization(model_to_test, search_space, self.features,
-                                                   features_test, self.qrels, 50, pca, 50)
-        else:
-            evaluation(self.features, features_test, self.qrels, 50, pca, model_to_test)
-
-    def forward_selection(self, model: str = 'nb', pca: int = 0, search_space: list = None):
         features_test = self.create_test_features()
 
         evaluation = Evaluation()
@@ -223,8 +210,30 @@ class Pipeline(object):
         else:
             model_to_test = MLPClassifier()
 
+        if search_space is not None:
+            features_validation = self.create_val_features()
+            evaluation.hyperparameter_optimization(model_to_test, search_space, self.features,
+                                                   features_test, features_validation,
+                                                   self.qrels_test, self.qrels_val, 50, pca, 50)
+        else:
+            evaluation(self.features, features_test, self.qrels_test, 50, pca, model_to_test)
+
+    def forward_selection(self, model: str = 'nb', pca: int = 0, search_space: list = None):
+        features_test = self.create_test_features()
+        features_val = self.create_val_features()
+
+        evaluation = Evaluation()
+        if model == 'nb':
+            model_to_test = GaussianNB()
+        elif model == 'lr':
+            model_to_test = LogisticRegression()
+        else:
+            model_to_test = MLPClassifier()
+
         evaluation.feature_selection(model_to_test, search_space, self.features,
-                                     features_test, self.qrels, 50, pca)
+                                     features_test, features_val,
+                                     self.qrels_test, self.qrels_val,
+                                     50, pca)
 
     def save(self, path: str = 'data/processed'):
         check_path_exists(path)

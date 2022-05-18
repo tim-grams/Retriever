@@ -41,7 +41,9 @@ class Evaluation(object):
     def hyperparameter_optimization(self, model, search_space,
                                     X_y_train: pd.DataFrame,
                                     X_test: pd.DataFrame,
+                                    X_val: pd.DataFrame,
                                     qrels: pd.DataFrame,
+                                    qrels_val: pd.DataFrame,
                                     k: int = 50,
                                     components_pca: int = 0,
                                     trials: int = 50
@@ -50,20 +52,26 @@ class Evaluation(object):
         @use_named_args(search_space)
         def evaluate(**params):
             model.set_params(**params)
-            return self.compute_metrics(model, X, y, X_test, test_pair, qrels, k, components_pca)
+            return self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca)
 
-        X, y, X_test, test_pair = split_and_scale(X_y_train, X_test, components_pca)
+        X, y, X_test, test_pair, X_val, val_pair = split_and_scale(X_y_train, X_test, X_val, components_pca)
         best_result = gp_minimize(evaluate, search_space, n_calls=trials)
         print(f'Best MRR: {best_result.fun}')
         print(f'Best Hyperparameters: {best_result.x}')
-        print(f'MRR on test set: ')
+
+        best_params_dict = {}
+        for space, value in zip(search_space, best_result.x):
+            best_params_dict[space.name] = value
+        print(f'MRR on test set: {self.compute_metrics(model(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca)}')
 
         return best_result.fun
 
     def feature_selection(self, model, search_space,
                           X_y_train: pd.DataFrame,
                           X_test: pd.DataFrame,
+                          X_val: pd.DataFrame,
                           qrels: pd.DataFrame,
+                          qrels_val: pd.DataFrame,
                           k: int = 50,
                           components_pca: int = 0
                           ):
@@ -81,7 +89,9 @@ class Evaluation(object):
                                                                search_space,
                                                                X_y_train[['qID', 'pID', 'y'] + added_columns + [feature]],
                                                                X_test[['qID', 'pID'] + added_columns + [feature]],
+                                                               X_val[['qID', 'pID'] + added_columns + [feature]],
                                                                qrels,
+                                                               qrels_val,
                                                                k,
                                                                components_pca)
                 if performance > current_performance and performance > current_best[1]:
@@ -122,14 +132,11 @@ class Evaluation(object):
             results.loc[((results['pID'] == qrel['pID']) & (results['qID'] == qrel['qID'])), 'relevant'] = qrel[
                 'feedback']
 
-        try:
-            mrr = self.mean_reciprocal_rank(results)
-            map = self.mean_average_precision_score(results)
-            ndcg = self.normalized_discounted_cumulative_gain(results)
-            metrics = self.metrics(results)
-            k_metrics = self.metrics(results, k)
-        except ZeroDivisionError:
-            print(results)
+        mrr = self.mean_reciprocal_rank(results)
+        map = self.mean_average_precision_score(results)
+        ndcg = self.normalized_discounted_cumulative_gain(results)
+        metrics = self.metrics(results)
+        k_metrics = self.metrics(results, k)
 
         if save_result:
             self.results = pd.concat([self.results,
@@ -163,8 +170,6 @@ class Evaluation(object):
 
     def average_precision_score(self, results: pd.DataFrame):
         ranks = self.calculate_ranks(results)
-        print(ranks)
-
         sum = 0
         for index, data in ranks.iterrows():
             sum += index / data['rank']

@@ -97,7 +97,7 @@ def unzip(file: str = None):
         LOGGER.info("unzipping successful")
 
 
-def import_val_test_queries(path: str = "data/TREC_Passage", samples: int = 50):
+def import_val_test_queries(path: str = "data/TREC_Passage", qrels_val: list = None, qrels_test: list = None):
     filepath = os.path.join(path, 'msmarco-test2019-queries.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -105,7 +105,8 @@ def import_val_test_queries(path: str = "data/TREC_Passage", samples: int = 50):
 
     col_names = ["qID", "Query"]
     val_df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
-    val_df = val_df.sample(samples, random_state=42).reset_index(drop=True)
+    if qrels_val is not None:
+        val_df = val_df[val_df['qID'].isin(qrels_val)].reset_index(drop=True)
 
     filepath = os.path.join(path, 'msmarco-test2020-queries.tsv')
     if not os.path.exists(filepath):
@@ -114,7 +115,8 @@ def import_val_test_queries(path: str = "data/TREC_Passage", samples: int = 50):
 
     col_names = ["qID", "Query"]
     test_df = pd.read_csv(filepath, sep="\t", names=col_names, header=None)
-    test_df = test_df.sample(samples, random_state=42).reset_index(drop=True)
+    if qrels_test is not None:
+        test_df = test_df[test_df['qID'].isin(qrels_test)].reset_index(drop=True)
     return val_df, test_df
 
 
@@ -149,7 +151,7 @@ def import_collection(path: str = "data/TREC_Passage", qrels_val: list = None, q
     return df
 
 
-def import_qrels(path: str = "data/TREC_Passage", queries_val: list = None, queries_test: list = None):
+def import_qrels(path: str = "data/TREC_Passage", samples: int = 50):
     filepath = os.path.join(path, '2019qrels-pass.txt')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -158,8 +160,8 @@ def import_qrels(path: str = "data/TREC_Passage", queries_val: list = None, quer
     col_names = ["qID", "0", "pID", "feedback"]
     df_val = pd.read_csv(filepath, sep=" ", names=col_names, header=None)
     df_val = df_val[df_val['feedback'] >= 1]
-    if queries_val is not None:
-        df_val = df_val[df_val['qID'].isin(queries_val)].reset_index(drop=True)
+    sampled_qids = pd.Series(df_val['qID'].unique()).sample(samples, random_state=42).reset_index(drop=True)
+    df_val = df_val[df_val['qID'].isin(sampled_qids)].reset_index(drop=True)
 
     filepath = os.path.join(path, '2020qrels-pass.txt')
     if not os.path.exists(filepath):
@@ -169,8 +171,8 @@ def import_qrels(path: str = "data/TREC_Passage", queries_val: list = None, quer
     col_names = ["qID", "0", "pID", "feedback"]
     df_test = pd.read_csv(filepath, sep=" ", names=col_names, header=None)
     df_test = df_test[df_test['feedback'] >= 1]
-    if queries_test is not None:
-        df_test = df_test[df_test['qID'].isin(queries_test)].reset_index(drop=True)
+    sampled_qids = pd.Series(df_test['qID'].unique()).sample(samples, random_state=42).reset_index(drop=True)
+    df_test = df_test[df_test['qID'].isin(sampled_qids)].reset_index(drop=True)
     return df_val.drop(columns=['0']), df_test.drop(columns=['0'])
 
 
