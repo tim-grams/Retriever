@@ -11,10 +11,17 @@ def check_path_exists(path: str = None):
     Args:
         path (str): The path to check.
     """
+    
     if path is not None and not os.path.exists(path):
         LOGGER.info(f'Creating path {path}')
         os.makedirs(path)
 
+
+def check_file_exits(path: str = None):
+    if path is not None:
+        return os.path.isfile(path)
+    return False
+    
 
 def save(obj: object, path: str):
     with open(path, 'wb') as fin:

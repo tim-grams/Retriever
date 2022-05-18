@@ -1,3 +1,4 @@
+from isort import check_file
 from src.data.dataset import download_dataset, import_val_test_queries, import_queries, import_collection, import_qrels, import_training_set
 import pandas as pd
 from tqdm import tqdm
@@ -8,8 +9,7 @@ from src.features.generator import create_bert_embeddings, create_bert_feature, 
     create_interpretation_features, create_sentence_features
 import logging
 import os
-from src.utils.utils import check_path_exists
-import time
+from src.utils.utils import check_file_exits, check_path_exists
 from src.models.training import Evaluation
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
@@ -47,29 +47,36 @@ class Pipeline(object):
         if features is not None:
             self.features = pd.read_pickle(features)
 
-    def setup(self, datasets: list = None, path: str = 'data/TREC_Passage'):
+
+
+    def setup(self, datasets: list = None, path: str = 'data/TREC_Passage', load = False):
         if datasets is None:
             datasets = ['collection.tsv', 'queries.train.tsv', 'msmarco-test2019-queries.tsv', '2019qrels-pass.txt',
                         '2020qrels-pass.txt', 'qidpidtriples.train.full.2.tsv', 'msmarco-test2020-queries.tsv']
 
-        download_dataset(datasets)
 
-        if '2019qrels-pass.txt' or '2019qrels-pass.txt' in datasets:
-            self.qrels_val, self.qrels_test = import_qrels(path, 20)
-        if 'msmarco-test2019-queries.tsv' or 'msmarco-test2020-queries.tsv' in datasets:
-            self.queries_val, self.queries_test = import_val_test_queries(path, list(self.qrels_val['qID']),
-                                                                          list(self.qrels_test['qID']))
-        if 'qidpidtriples.train.full.2.tsv' in datasets:
-            self.features = import_training_set(path, 200)
-        if 'queries.train.tsv' in datasets:
-            self.queries = import_queries(path, list(self.features['qID']))
-        if 'collection.tsv' in datasets:
-            self.collection = import_collection(path, list(self.qrels_val['pID']), list(self.qrels_test['pID']), list(self.features['pID']), 0)
+        if load == True:
+            self.load_queries_collection_features()
 
-        self.queries_val = self.queries_val[self.queries_val['qID'].isin(self.qrels_val['qID'])].reset_index(drop=True)
-        self.queries_test = self.queries_test[self.queries_test['qID'].isin(self.qrels_test['qID'])].reset_index(drop=True)
+        else:
+            download_dataset(datasets)
 
-        return self.save()
+            if '2019qrels-pass.txt' or '2019qrels-pass.txt' in datasets:
+                self.qrels_val, self.qrels_test = import_qrels(path, 20)
+            if 'msmarco-test2019-queries.tsv' or 'msmarco-test2020-queries.tsv' in datasets:
+                self.queries_val, self.queries_test = import_val_test_queries(path, list(self.qrels_val['qID']),
+                                                                              list(self.qrels_test['qID']))
+            if 'qidpidtriples.train.full.2.tsv' in datasets:
+                self.features = import_training_set(path, 200)
+            if 'queries.train.tsv' in datasets:
+                self.queries = import_queries(path, list(self.features['qID']))
+            if 'collection.tsv' in datasets:
+                self.collection = import_collection(path, list(self.qrels_val['pID']), list(self.qrels_test['pID']), list(self.features['pID']), 0)
+
+            self.queries_val = self.queries_val[self.queries_val['qID'].isin(self.qrels_val['qID'])].reset_index(drop=True)
+            self.queries_test = self.queries_test[self.queries_test['qID'].isin(self.qrels_test['qID'])].reset_index(drop=True)
+
+            return self.save()
 
     def preprocess(self, expansion = False):
         LOGGER.info('Preprocessing collection')
@@ -237,7 +244,24 @@ class Pipeline(object):
 
     def save(self, path: str = 'data/processed'):
         check_path_exists(path)
-        self.queries.to_pickle(os.path.join(path, 'queries' + str(time.time()) + '.pkl'))
-        self.collection.to_pickle(os.path.join(path, 'collection' + str(time.time()) + '.pkl'))
-        self.features.to_pickle(os.path.join(path, 'features' + str(time.time()) + '.pkl'))
+        self.queries.to_pickle(os.path.join(path, 'queries.pkl'))
+        self.collection.to_pickle(os.path.join(path, 'collection.pkl'))
+        self.features.to_pickle(os.path.join(path, 'features.pkl'))
         return self
+
+    def load_queries_collection_features(self, path: str = 'data/processed'):
+        check_path_exists(path)
+
+        if (check_file_exits(os.path.join(path, 'queries.pkl'))
+        and check_file_exits(os.path.join(path, 'features.pkl'))
+        and check_file_exits(os.path.join(path, 'collection.pkl'))):
+            self.queries = pd.read_pickle(os.path.join(path, 'queries.pkl'))
+            self.features = pd.read_pickle(os.path.join(path, 'features.pkl'))
+            self.collection = pd.read_pickle(os.path.join(path, 'collection.pkl'))
+
+
+
+
+
+
+
