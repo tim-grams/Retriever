@@ -7,5 +7,5 @@ scikit-learn
 textblob
 gensim
 sentence_transformers
-flair
+flair==0.11.1
 scikit-optimize
