@@ -57,7 +57,7 @@ class Pipeline(object):
 
         
         if load == True:
-            self.load_queries_collection_features()#
+            self.load_queries_collection_features()
             
         else:
             download_dataset(datasets)
