@@ -62,7 +62,7 @@ class Evaluation(object):
         best_params_dict = {}
         for space, value in zip(search_space, best_result.x):
             best_params_dict[space.name] = value
-        print(f'MRR on test set: {self.compute_metrics(model.set_params(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca)}')
+        print(f'MRR on test set: {self.compute_metrics(model.set_params(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca, save_result=True)}')
 
         return best_result.fun
 
