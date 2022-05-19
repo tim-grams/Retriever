@@ -1,4 +1,3 @@
-from isort import check_file
 from src.data.dataset import download_dataset, import_val_test_queries, import_queries, import_collection, import_qrels, import_training_set
 import pandas as pd
 from tqdm import tqdm
