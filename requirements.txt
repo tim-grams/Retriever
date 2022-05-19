@@ -9,3 +9,4 @@ gensim
 sentence_transformers
 flair==0.11.1
 scikit-optimize
+seaborn

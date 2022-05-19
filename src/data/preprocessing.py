@@ -19,6 +19,16 @@ LOGGER = logging.getLogger('Preprocessor')
 
 
 def preprocess(data: pd.Series, expansion: bool = False):
+    ''' Preprocess Text using tokenization, removing punctuation and stopwords, text expansion, stemming
+    
+    Args:
+        data (pd.Series): Series of strings
+        expansion (bool): Decide whether to use word expansion on data or not
+
+    Returns:
+        data (pd.Series): Series of np.arrays containing preprocessed text 
+
+    '''
     LOGGER.info('Preprocessing ...')
 
     if expansion:
@@ -37,10 +47,28 @@ def preprocess(data: pd.Series, expansion: bool = False):
 
 
 def tokenization(text: str):
+    ''' Tokenize using nltk.word_tokenize method and lower string
+    
+    Args:
+        text (str): String of text
+
+    Returns:
+        (pd.Series): Series containing lowered tokens 
+
+    '''
     return pd.Series(nltk.word_tokenize(text.lower()))
 
 
 def removal(tokens: pd.Series):
+    ''' Remove punctuation, stopwords and NA values
+    
+    Args:
+        tokens (pd.Series): Series of tokens
+
+    Returns:
+        tokens (pd.Series): Series containing tokens with punctuation, stopwords and NA values removed
+
+    '''
     stopwords_list = stopwords.words("english")
 
     tokens = tokens.apply(lambda token: token.translate(str.maketrans('', '', string.punctuation)))
@@ -50,18 +78,46 @@ def removal(tokens: pd.Series):
 
 
 def stemming(tokens: pd.Series):
+    ''' Stemm tokens using nltk PorterStemmer method
+    
+    Args:
+        tokens (pd.Series): Series of tokens
+
+    Returns:
+        tokens (pd.Series): Series containing stemmed tokens
+
+    '''
     stemmer = PorterStemmer()
 
     return tokens.apply(lambda token: stemmer.stem(token))
 
 
 def lemmatization(tokens: pd.Series):
+    ''' Lemmatize tokens using nltk WordNetLemmatizer method
+    
+    Args:
+        tokens (pd.Series): Series of tokens
+
+    Returns:
+        tokens (pd.Series): Series containing lemmatized tokens
+
+    '''
     lemmatizer = WordNetLemmatizer()
 
     return tokens.apply(lambda token: lemmatizer.lemmatize(token))
 
 
 def pca(features: pd.DataFrame, components: int = 5):
+    '''
+    
+    Args:
+        features (pd.Series):
+        components (int):
+
+    Returns:
+        (pd.DataFrame):
+
+    '''
     pca = PCA(components)
     columns = ['pca_comp_%i' % i for i in range(components)]
 
@@ -69,6 +125,21 @@ def pca(features: pd.DataFrame, components: int = 5):
 
 
 def split_and_scale(X_y_train, X_test, X_val=None, components_pca: int = 0):
+    '''
+    
+    Args:
+        X_y_train ():
+        X_test ():
+        X_val: ():
+        components_pca ():
+
+    Returns:
+        X ():
+        y ():
+        X_test ():
+        test_pair ():
+
+    '''
     dataframes = []
     y = X_y_train['y']
     X = X_y_train.drop(columns=['qID', 'pID', 'y'])
@@ -99,6 +170,16 @@ def split_and_scale(X_y_train, X_test, X_val=None, components_pca: int = 0):
 
 
 def query_expansion(tokens: pd.Series, sample_size=2):
+    ''' Expand series of tokens with synonyms
+    
+    Args:
+        tokens (pd.Series): Series of tokens
+        sample_size (int):
+
+    Returns:
+        new_tokenlist (pd.Series):
+
+    '''    
     token_list = tokens.tolist()
 
     new_tokenlist = []
@@ -113,6 +194,17 @@ def query_expansion(tokens: pd.Series, sample_size=2):
 
 
 def get_synonyms(phrase, sample_size):
+    ''' Create synonyms using wordnets sysnsets method
+    
+    Args:
+        phrase (str):
+        sample_size (int):
+
+    Returns:
+        synonym_set (list): List containing sysnonyms for given phrase. Only returned if sample_size > set of sysnonyms for phrase
+        synonym_set_sampled (list): List containing sampled sysnonyms for given phrase
+
+    '''   
     synonyms = []
     for syn in wordnet.synsets(phrase):
         for l in syn.lemmas():
