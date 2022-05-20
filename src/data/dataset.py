@@ -214,7 +214,7 @@ def import_collection(path: str = "data/TREC_Passage", qrels_val: list = None, q
     return df
 
 
-def import_qrels(path: str = "data/TREC_Passage", samples: int = 50):
+def import_qrels(path: str = "data/TREC_Passage", samples: int = 5):
     ''' Imports data from 2019qrels-pass.txt as validation set and from 2020qrels-pass.txt as test set
     
     Args:

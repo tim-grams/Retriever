@@ -27,8 +27,11 @@ class Evaluation(object):
                  qrels: pd.DataFrame,
                  k: int = 50,
                  components_pca: int = 0,
-                 model=GaussianNB()):
-        X, y, X_test, test_pair = split_and_scale(X_y_train, X_test, components_pca)
+                 model=GaussianNB(),
+                 pairwise_model=None,
+                 pairwise_top_k: int = 50,
+                 save_result: bool = True):
+        X, y, X_test, test_pair = split_and_scale(X_y_train, X_test, components_pca=components_pca)
         mrr = self.compute_metrics(model,
                                    X,
                                    y,
@@ -36,7 +39,10 @@ class Evaluation(object):
                                    test_pair,
                                    qrels,
                                    k,
-                                   components_pca)
+                                   components_pca,
+                                   pairwise_model,
+                                   pairwise_top_k,
+                                   save_result=save_result)
         print(f'MRR: {mrr}')
 
     def hyperparameter_optimization(self, model, search_space,
@@ -47,13 +53,16 @@ class Evaluation(object):
                                     qrels_val: pd.DataFrame,
                                     k: int = 50,
                                     components_pca: int = 0,
-                                    trials: int = 50
+                                    pairwise_model=None,
+                                    pairwise_top_k: int = 50,
+                                    trials: int = 50,
+                                    save_result: bool = True
                                     ):
 
         @use_named_args(search_space)
         def evaluate(**params):
             model.set_params(**params)
-            return self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca)
+            return self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca, pairwise_model, pairwise_top_k)
 
         X, y, X_test, test_pair, X_val, val_pair = split_and_scale(X_y_train, X_test, X_val, components_pca)
         best_result = gp_minimize(evaluate, search_space, n_calls=trials)
@@ -64,7 +73,7 @@ class Evaluation(object):
         for space, value in zip(search_space, best_result.x):
             best_params_dict[space.name] = value
         print(
-            f'MRR on test set: {self.compute_metrics(model.set_params(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca, save_result=True)}')
+            f'MRR on test set: {self.compute_metrics(model.set_params(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca, pairwise_model, pairwise_top_k, save_result=save_result)}')
 
         return best_result.fun
 
@@ -75,7 +84,8 @@ class Evaluation(object):
                           qrels: pd.DataFrame,
                           qrels_val: pd.DataFrame,
                           k: int = 50,
-                          components_pca: int = 0
+                          components_pca: int = 0,
+                          save_results: bool = True
                           ):
         features = list(X_y_train.drop(columns=['qID', 'pID', 'y']).columns)
         added_columns = []
@@ -96,7 +106,8 @@ class Evaluation(object):
                                                                qrels,
                                                                qrels_val,
                                                                k,
-                                                               components_pca)
+                                                               components_pca,
+                                                               save_result=save_results)
                 if performance > current_performance and performance > current_best[1]:
                     current_best = (feature, performance)
             if current_best[0] is not None:
@@ -122,6 +133,7 @@ class Evaluation(object):
                         k: int = 50,
                         components_pca: int = 0,
                         pairwise_model=None,
+                        pairwise_top_k: int = 50,
                         save_result: bool = False):
         model.fit(X, y)
         confidences = pd.DataFrame(model.predict_proba(X_test))[1]
@@ -137,7 +149,7 @@ class Evaluation(object):
                 'feedback']
 
         if pairwise_model is not None:
-            results = pairwise_optimize(pairwise_model, results, X, y)
+            results = pairwise_optimize(pairwise_model, results, X, y, X_test, pairwise_top_k)
 
         mrr = self.mean_reciprocal_rank(results)
         map = self.mean_average_precision_score(results)

@@ -1,4 +1,5 @@
-from src.data.dataset import download_dataset, import_val_test_queries, import_queries, import_collection, import_qrels, import_training_set
+from src.data.dataset import download_dataset, import_val_test_queries, import_queries, import_collection, import_qrels, \
+    import_training_set
 import pandas as pd
 from tqdm import tqdm
 from src.data.preprocessing import preprocess
@@ -13,6 +14,7 @@ from src.models.training import Evaluation
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
+from src.models.ranknet import RankNet
 
 tqdm.pandas()
 LOGGER = logging.getLogger('pipeline')
@@ -46,13 +48,10 @@ class Pipeline(object):
         if features is not None:
             self.features = pd.read_pickle(features)
 
-
-
-    def setup(self, datasets: list = None, path: str = 'data/TREC_Passage', load = False):
+    def setup(self, datasets: list = None, path: str = 'data/TREC_Passage', load=False):
         if datasets is None:
             datasets = ['collection.tsv', 'queries.train.tsv', 'msmarco-test2019-queries.tsv', '2019qrels-pass.txt',
                         '2020qrels-pass.txt', 'qidpidtriples.train.full.2.tsv', 'msmarco-test2020-queries.tsv']
-
 
         if load == True:
             self.load_queries_collection_features()
@@ -61,7 +60,7 @@ class Pipeline(object):
             download_dataset(datasets)
 
             if '2019qrels-pass.txt' or '2019qrels-pass.txt' in datasets:
-                self.qrels_val, self.qrels_test = import_qrels(path, 20)
+                self.qrels_val, self.qrels_test = import_qrels(path, 10)
             if 'msmarco-test2019-queries.tsv' or 'msmarco-test2020-queries.tsv' in datasets:
                 self.queries_val, self.queries_test = import_val_test_queries(path, list(self.qrels_val['qID']),
                                                                               list(self.qrels_test['qID']))
@@ -70,14 +69,17 @@ class Pipeline(object):
             if 'queries.train.tsv' in datasets:
                 self.queries = import_queries(path, list(self.features['qID']))
             if 'collection.tsv' in datasets:
-                self.collection = import_collection(path, list(self.qrels_val['pID']), list(self.qrels_test['pID']), list(self.features['pID']), 0)
+                self.collection = import_collection(path, list(self.qrels_val['pID']), list(self.qrels_test['pID']),
+                                                    list(self.features['pID']), 0)
 
-            self.queries_val = self.queries_val[self.queries_val['qID'].isin(self.qrels_val['qID'])].reset_index(drop=True)
-            self.queries_test = self.queries_test[self.queries_test['qID'].isin(self.qrels_test['qID'])].reset_index(drop=True)
+            self.queries_val = self.queries_val[self.queries_val['qID'].isin(self.qrels_val['qID'])].reset_index(
+                drop=True)
+            self.queries_test = self.queries_test[self.queries_test['qID'].isin(self.qrels_test['qID'])].reset_index(
+                drop=True)
 
             return self.save()
 
-    def preprocess(self, expansion = False):
+    def preprocess(self, expansion=False):
         LOGGER.info('Preprocessing collection')
         self.collection['preprocessed'] = preprocess(self.collection.Passage)
 
@@ -205,7 +207,7 @@ class Pipeline(object):
 
         return features_val
 
-    def evaluate(self, model: str = 'nb', pca: int = 0, search_space: list = None):
+    def evaluate(self, model: str = 'nb', pca: int = 0, pairwise_model: str = None, pairwise_top_k: int = 50, search_space: list = None):
         features_test = self.create_test_features()
 
         evaluation = Evaluation()
@@ -216,13 +218,18 @@ class Pipeline(object):
         else:
             model_to_test = MLPClassifier()
 
+        if pairwise_model == 'ranknet':
+            pairwise_model = RankNet(len(self.features.columns) - 3)
+        else:
+            pairwise_model = None
+
         if search_space is not None:
             features_validation = self.create_val_features()
             evaluation.hyperparameter_optimization(model_to_test, search_space, self.features,
                                                    features_test, features_validation,
-                                                   self.qrels_test, self.qrels_val, 50, pca, 50)
+                                                   self.qrels_test, self.qrels_val, 50, pca, pairwise_model, pairwise_top_k, 50)
         else:
-            evaluation(self.features, features_test, self.qrels_test, 50, pca, model_to_test)
+            evaluation(self.features, features_test, self.qrels_test, 50, pca, model_to_test, pairwise_model, pairwise_top_k)
 
     def forward_selection(self, model: str = 'nb', pca: int = 0, search_space: list = None):
         features_test = self.create_test_features()
@@ -252,15 +259,8 @@ class Pipeline(object):
         check_path_exists(path)
 
         if (check_file_exits(os.path.join(path, 'queries.pkl'))
-        and check_file_exits(os.path.join(path, 'features.pkl'))
-        and check_file_exits(os.path.join(path, 'collection.pkl'))):
+                and check_file_exits(os.path.join(path, 'features.pkl'))
+                and check_file_exits(os.path.join(path, 'collection.pkl'))):
             self.queries = pd.read_pickle(os.path.join(path, 'queries.pkl'))
             self.features = pd.read_pickle(os.path.join(path, 'features.pkl'))
             self.collection = pd.read_pickle(os.path.join(path, 'collection.pkl'))
-
-
-
-
-
-
-
