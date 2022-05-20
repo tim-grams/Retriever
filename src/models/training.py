@@ -7,6 +7,7 @@ import os
 import json
 from skopt.utils import use_named_args
 from skopt import gp_minimize
+from src.models.pairwise import pairwise_optimize
 
 
 class Evaluation(object):
@@ -62,7 +63,8 @@ class Evaluation(object):
         best_params_dict = {}
         for space, value in zip(search_space, best_result.x):
             best_params_dict[space.name] = value
-        print(f'MRR on test set: {self.compute_metrics(model(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca)}')
+        print(
+            f'MRR on test set: {self.compute_metrics(model.set_params(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca, save_result=True)}')
 
         return best_result.fun
 
@@ -87,7 +89,8 @@ class Evaluation(object):
                 print(f'Testing features: {added_columns + [feature]}')
                 performance = self.hyperparameter_optimization(model,
                                                                search_space,
-                                                               X_y_train[['qID', 'pID', 'y'] + added_columns + [feature]],
+                                                               X_y_train[
+                                                                   ['qID', 'pID', 'y'] + added_columns + [feature]],
                                                                X_test[['qID', 'pID'] + added_columns + [feature]],
                                                                X_val[['qID', 'pID'] + added_columns + [feature]],
                                                                qrels,
@@ -118,6 +121,7 @@ class Evaluation(object):
                         qrels: pd.DataFrame,
                         k: int = 50,
                         components_pca: int = 0,
+                        pairwise_model=None,
                         save_result: bool = False):
         model.fit(X, y)
         confidences = pd.DataFrame(model.predict_proba(X_test))[1]
@@ -131,6 +135,9 @@ class Evaluation(object):
         for i, qrel in qrels.iterrows():
             results.loc[((results['pID'] == qrel['pID']) & (results['qID'] == qrel['qID'])), 'relevant'] = qrel[
                 'feedback']
+
+        if pairwise_model is not None:
+            results = pairwise_optimize(pairwise_model, results, X, y)
 
         mrr = self.mean_reciprocal_rank(results)
         map = self.mean_average_precision_score(results)
