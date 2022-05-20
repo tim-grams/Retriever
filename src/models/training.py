@@ -30,6 +30,7 @@ class Evaluation(object):
                  model=GaussianNB(),
                  pairwise_model=None,
                  pairwise_top_k: int = 50,
+                 pairwise_train: bool = True,
                  save_result: bool = True):
         X, y, X_test, test_pair = split_and_scale(X_y_train, X_test, components_pca=components_pca)
         mrr = self.compute_metrics(model,
@@ -42,6 +43,7 @@ class Evaluation(object):
                                    components_pca,
                                    pairwise_model,
                                    pairwise_top_k,
+                                   pairwise_train,
                                    save_result=save_result)
         print(f'MRR: {mrr}')
 
@@ -55,6 +57,7 @@ class Evaluation(object):
                                     components_pca: int = 0,
                                     pairwise_model=None,
                                     pairwise_top_k: int = 50,
+                                    pairwise_train: bool = True,
                                     trials: int = 50,
                                     save_result: bool = True
                                     ):
@@ -62,7 +65,7 @@ class Evaluation(object):
         @use_named_args(search_space)
         def evaluate(**params):
             model.set_params(**params)
-            return self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca, pairwise_model, pairwise_top_k)
+            return self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca, pairwise_model, pairwise_top_k, pairwise_train)
 
         X, y, X_test, test_pair, X_val, val_pair = split_and_scale(X_y_train, X_test, X_val, components_pca)
         best_result = gp_minimize(evaluate, search_space, n_calls=trials)
@@ -73,7 +76,7 @@ class Evaluation(object):
         for space, value in zip(search_space, best_result.x):
             best_params_dict[space.name] = value
         print(
-            f'MRR on test set: {self.compute_metrics(model.set_params(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca, pairwise_model, pairwise_top_k, save_result=save_result)}')
+            f'MRR on test set: {self.compute_metrics(model.set_params(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca, pairwise_model, pairwise_top_k, pairwise_train, save_result=save_result)}')
 
         return best_result.fun
 
@@ -134,6 +137,7 @@ class Evaluation(object):
                         components_pca: int = 0,
                         pairwise_model=None,
                         pairwise_top_k: int = 50,
+                        pairwise_train: bool = True,
                         save_result: bool = False):
         model.fit(X, y)
         confidences = pd.DataFrame(model.predict_proba(X_test))[1]
@@ -149,7 +153,7 @@ class Evaluation(object):
                 'feedback']
 
         if pairwise_model is not None:
-            results = pairwise_optimize(pairwise_model, results, X, y, X_test, pairwise_top_k)
+            results = pairwise_optimize(pairwise_model, results, X, y, X_test, pairwise_top_k, pairwise_train)
 
         mrr = self.mean_reciprocal_rank(results)
         map = self.mean_average_precision_score(results)
@@ -162,7 +166,8 @@ class Evaluation(object):
                                       pd.DataFrame({'model': str(model),
                                                     'hyperparameters': json.dumps(model.get_params()),
                                                     'features': json.dumps(list(X.columns)),
-                                                    'sampling': len(X),
+                                                    'sampling_training': len(X),
+                                                    'sampling_test': len(X_test),
                                                     'pca': components_pca,
                                                     'MRR': mrr,
                                                     'MAP': map,

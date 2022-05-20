@@ -84,8 +84,9 @@ def bubble_sort(pairwise_results, documents) -> list:
     return documents
 
 
-def pairwise_optimize(model, results: pd.DataFrame, X, y, X_test, top_k: int = 50) -> pd.DataFrame:
-    train_pairwise(model, X, y)
+def pairwise_optimize(model, results: pd.DataFrame, X, y, X_test, top_k: int = 50, train: bool = True) -> pd.DataFrame:
+    if train:
+        train_pairwise(model, X, y)
 
     top = pd.concat([results, X_test], axis=1).sort_values('confidence', ascending=False).head(top_k)
     X_test = top.drop(columns=['confidence', 'qID', 'relevant'])
