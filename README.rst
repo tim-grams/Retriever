@@ -15,7 +15,7 @@ Information retrieval in computing and information science is the
 process of obtaining information system resources that are relevant to an
 information need from a collection of those resources `[1] <https://en.wikipedia.org/wiki/Information_retrieval/>`_.
 
-How to setup up
+How to setup
 ################
 
 Follow these steps:
