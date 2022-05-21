@@ -3,10 +3,10 @@ from src.data.dataset import import_val_test_queries, import_queries, import_col
 import pandas as pd
 from tqdm import tqdm
 from src.data.preprocessing import preprocess
-from src.features.generator import create_bert_embeddings, create_bert_feature, create_glove_feature, \
-    create_glove_embeddings, create_w2v_embeddings, create_w2v_feature, create_tfidf_embeddings, create_all, \
+from src.features.generator import create_bert_embeddings, create_bert_feature, create_glove_embeddings_tf_idf_weighted, create_glove_feature, \
+    create_glove_embeddings, create_w2v_embeddings, create_w2v_embeddings_tf_idf_weighted, create_w2v_feature, create_tfidf_embeddings, create_all, \
     create_BM2_feature, create_tfidf_feature, create_jaccard_feature, create_POS_features, \
-    create_interpretation_features, create_sentence_features
+    create_interpretation_features, create_sentence_features, create_w2v_tfidf_feature
 import logging
 import os
 from src.utils.utils import check_path_exists
@@ -107,6 +107,21 @@ class Pipeline(object):
 
         return self
 
+    def create_w2v_embeddings_tfidf_weighted(self):
+        assert self.collection['preprocessed'] is not None, "Preprocess the data first"
+        assert self.collection['tfidf'] is not None, "Create tfidf first!"
+        assert self.queries['tfidf'] is not None, "Create tfidf first!"
+        assert self.queries_val['tfidf'] is not None, "Create tfidf first!"
+        assert self.queries_test['tfidf'] is not None, "Create tfidf first!"
+
+        w2v, self.collection = create_w2v_embeddings_tf_idf_weighted(self.collection, name='collection')
+        w2v, self.queries = create_w2v_embeddings_tf_idf_weighted(self.queries, w2v=w2v, name='query')
+        w2v, self.queries_val = create_w2v_embeddings_tf_idf_weighted(self.queries_val, w2v=w2v, name='query_val')
+        w2v, self.queries_test = create_w2v_embeddings_tf_idf_weighted(self.queries_test, w2v=w2v, name='query_test')
+
+        return self
+
+
     def create_w2v_embeddings(self):
         assert self.collection['preprocessed'] is not None, "Preprocess the data first"
 
@@ -116,10 +131,16 @@ class Pipeline(object):
         w2v, self.queries_test = create_w2v_embeddings(self.queries_test, w2v=w2v, name='query_test')
 
         return self
-
+    
     def create_w2v_feature(self, path_collection: str = 'data/embeddings/w2v_collection_embeddings.pkl',
                            path_query: str = 'data/embeddings/w2v_query_embeddings.pkl'):
         self.features = create_w2v_feature(self.features, self.collection, self.queries, path_collection, path_query)
+
+        return self
+
+    def create_w2v_tfidf_feature(self, path_collection: str = 'data/embeddings/w2v_tfidf_collection_embeddings.pkl',
+                           path_query: str = 'data/embeddings/w2v_tfidf_query_embeddings.pkl'):
+        self.features = create_w2v_tfidf_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self
 
@@ -139,6 +160,14 @@ class Pipeline(object):
         glove, self.queries_test = create_glove_embeddings(self.queries_test, glove=glove, name='query_test')
 
         return self
+
+    def create_glove_embeddings_tfidf_weighted(self):
+        assert self.collection['preprocessed'] is not None, "Preprocess the data first"
+
+        tfidf, self.collection = create_tfidf_embeddings(self.collection, name='collection')
+        glove, self.collection = create_glove_embeddings_tf_idf_weighted(self.collection, name='collection')
+        return self.save()
+        
 
     def create_tfidf_feature(self, path_collection: str = 'data/embeddings/tfidf_collection_embeddings.pkl',
                              path_query: str = 'data/embeddings/tfidf_query_embeddings.pkl'):

@@ -27,7 +27,10 @@ def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.Dat
     create_bert_embeddings(queries, bert=bert, name='query')
     w2v, _ = create_w2v_embeddings(collection, w2v=w2v, name='collection')
     create_w2v_embeddings(queries, w2v=w2v, name='query')
+    create_w2v_embeddings_tf_idf_weighted(collection, w2v=w2v, name = "collection")
+    create_w2v_embeddings_tf_idf_weighted(queries, w2v=w2v, name = "query")
     features = create_w2v_feature(features, collection, queries)
+    features = create_w2v_tfidf_feature(features, collection, queries)
     features = create_tfidf_feature(features, collection, queries)
     features = create_bert_feature(features, collection, queries)
     features = create_glove_feature(features, collection, queries)
@@ -61,6 +64,16 @@ def create_glove_embeddings(data: pd.DataFrame, glove=None, name: str = ''):
 
     return glove, data
 
+def create_glove_embeddings_tf_idf_weighted(data: pd.DataFrame, glove=None, name: str = ''):
+    if glove is None:
+        glove = Glove()
+
+    data['glove_tfidf'] = glove.transform_tfidfweighted(
+        data['preprocessed'], data['tfidf'],
+        f"data/embeddings/glove_tf_idf_{name}_embeddings.pkl")
+
+    return glove, data   
+
 
 def create_bert_embeddings(data: pd.DataFrame, bert=None, name: str = ''):
     if bert is None:
@@ -88,6 +101,14 @@ def create_w2v_embeddings(data: pd.DataFrame, w2v=None, name: str = ''):
 
     return w2v, data
 
+def create_w2v_embeddings_tf_idf_weighted(data: pd.DataFrame, w2v=None, name: str = ''):
+    if w2v is None:
+        w2v = word2vec(100, 1)
+
+    data['w2v_tfidf'] = w2v.transform_tf_idf_weighted(data['preprocessed'], data['tfidf'], 
+                                f"data/embeddings/w2v_tfidf_{name}_embeddings.pkl")
+
+    return w2v, data
 
 def create_w2v_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
                        path_collection: str = 'data/embeddings/w2v_collection_embeddings.pkl',
@@ -127,6 +148,43 @@ def create_w2v_feature(features: pd.DataFrame, collection: pd.DataFrame, queries
 
     return features
 
+def create_w2v_tfidf_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
+                       path_collection: str = 'data/embeddings/w2v_tfidf_collection_embeddings.pkl',
+                       path_query: str = 'data/embeddings/w2v_tfidf_query_embeddings.pkl'):
+    embeddings = np.array(load(path_collection))
+    embeddings_queries = np.array(load(path_query))
+
+    features['w2v_tfidf_cosine'] = features.progress_apply(lambda qrel:
+                                                     cosine_similarity_score(embeddings_queries[
+                                                                                 queries[
+                                                                                     queries[
+                                                                                         'qID'] == qrel.qID].index],
+                                                                             embeddings[collection[
+                                                                                 collection[
+                                                                                     'pID'] == qrel.pID].index]),
+                                                     axis=1)
+    features['w2v_tfidf_euclidean'] = features.progress_apply(lambda qrel:
+                                                        euclidean_distance_score(embeddings_queries[
+                                                                                     queries[
+                                                                                         queries[
+                                                                                             'qID'] == qrel.qID].index],
+                                                                                 embeddings[
+                                                                                     collection[
+                                                                                         collection[
+                                                                                             'pID'] == qrel.pID].index]),
+                                                        axis=1)
+    features['w2v_tfidf_manhattan'] = features.progress_apply(lambda qrel:
+                                                        manhattan_distance_score(embeddings_queries[
+                                                                                     queries[
+                                                                                         queries[
+                                                                                             'qID'] == qrel.qID].index],
+                                                                                 embeddings[
+                                                                                     collection[
+                                                                                         collection[
+                                                                                             'pID'] == qrel.pID].index]),
+                                                        axis=1)
+
+    return features
 
 def create_tfidf_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
                          path_collection: str = 'data/embeddings/tfidf_collection_embeddings.pkl',

@@ -3,6 +3,7 @@ from src.utils.utils import check_path_exists, save, load
 import numpy as np
 import pandas as pd
 import os
+from tqdm import tqdm
 
 
 class word2vec(object):
@@ -98,7 +99,7 @@ class word2vec(object):
 
         embeddings = []
         missing = []
-        for sentence in text_in_tokens:
+        for sentence in tqdm(text_in_tokens):
             sen = []
             for word in sentence:
                 try:
@@ -108,6 +109,59 @@ class word2vec(object):
                     missing.append(word)
                     sen.append(np.zeros(100))
 
+            embeddings.append(np.array(sen).sum(axis=0))
+        #print(str(len(missing)) + ' Unknown words replaced with zero vecs\n')
+
+        if store is not None:
+            check_path_exists(os.path.dirname(store))
+            save(embeddings, store)
+
+        return embeddings
+
+    def transform_tf_idf_weighted(self, text_in_tokens: pd.Series, tf_idf_weights: pd.Series, store: str = None):
+        ''' Transforms series of preprocessed tokens to word2vec embeddings with tf/idf weights.
+    
+        Args:
+            new_text_in_tokens (pd.Series): Series of preprocessed tokens
+            store (str): Path to store model to
+
+        Returns:
+            embeddings (list): list containing np.arrays with word2vec embeddings with tf/idf weights.
+
+        '''
+        text_in_tokens = [arr.tolist() for arr in text_in_tokens]
+        if self.is_fit is False:
+            self.fit(text_in_tokens)
+        else:
+            self.update(text_in_tokens)
+
+        self.is_transform = True
+        
+        w = self.get_wv()
+
+        embeddings = []
+        missing = []
+        for count, sentence in enumerate(tqdm(text_in_tokens)):
+            sen = []
+            weight_sum = 0
+            sen_token_weights = tf_idf_weights[count]
+
+            for word in sentence:
+                try:
+                    token_weight = sen_token_weights[word]
+                    weight_sum += token_weight
+                    w2vembedding = w[word]
+                    
+                    weighted_embedding = token_weight*w2vembedding
+                    sen.append(weighted_embedding)
+                    
+                except KeyError:
+                    #print(word + ' not in vocabular')
+                    missing.append(word)
+                    sen.append(np.zeros(100))
+
+
+            sen /= weight_sum
             embeddings.append(np.array(sen).sum(axis=0))
         #print(str(len(missing)) + ' Unknown words replaced with zero vecs\n')
 
