@@ -165,6 +165,8 @@ class Evaluation(object):
             self.results = pd.concat([self.results,
                                       pd.DataFrame({'model': str(model),
                                                     'hyperparameters': json.dumps(model.get_params()),
+                                                    'pairwise_model': pairwise_model,
+                                                    'pairwise_k': pairwise_top_k if pairwise_model is not None else None,
                                                     'features': json.dumps(list(X.columns)),
                                                     'sampling_training': len(X),
                                                     'sampling_test': len(X_test),
@@ -232,10 +234,9 @@ class Evaluation(object):
 
     def normalized_discounted_cumulative_gain(self, results: pd.DataFrame):
         ranks = self.calculate_ranks(results)
-
         dcg = 0
         idcg = 0
-        for index, data in ranks.sort_values('relevant').reset_index().iterrows():
+        for index, data in ranks.sort_values('relevant', ascending=False).reset_index().iterrows():
             dcg += (2 ** data['relevant'] - 1) / np.log2(data['rank'] + 1)
             idcg += (2 ** data['relevant'] - 1) / np.log2((index + 1) + 1)
         return dcg / idcg
