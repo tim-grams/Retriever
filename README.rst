@@ -1,4 +1,4 @@
-Retriever - Information Retrieval Project
+Information Retrieval Project
 ------------------------------------------
 
 A solution to the TREC 2020 passage ranking competition.
@@ -13,7 +13,7 @@ Description
 
 Information retrieval in computing and information science is the
 process of obtaining information system resources that are relevant to an
-information need from a collection of those resources [1] <https://en.wikipedia.org/wiki/Information_retrieval/>`__.
+information need from a collection of those resources `[1] <https://en.wikipedia.org/wiki/Information_retrieval/>`_.
 
 How to setup up
 ################
@@ -22,11 +22,14 @@ Follow these steps:
 
 1. Install dependencies
 
+2. Generate features using this `notebook <https://github.com/timg339/Retriever/blob/develop/notebooks/feature_generation.ipynb>`_
+
+3. Evaluate `pairwise <https://github.com/timg339/Retriever/blob/develop/notebooks/pairwise.ipynb>`_ and `pointwise <https://github.com/timg339/Retriever/blob/develop/notebooks/pointwise.ipynb>`_ algorithms.
+
 How to use
 ##########
 
-The module can be used by importing it directly in Python, accessing the command line interface
-or using the corresponding notebook.
+The module can be used by accessing the command line interface or using the corresponding notebooks.
 
 Credits
 #######

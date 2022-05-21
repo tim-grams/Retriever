@@ -9,19 +9,18 @@ pipeline = Pipeline()
 def _setup(args):
     pipeline.setup()
     pipeline.preprocess()
+    pipeline.create_train_features()
+    pipeline.create_val_features()
+    pipeline.create_test_features()
 
 
-def _tfidf(args):
-    pipeline.create_tfidf_embeddings()
-    pipeline.create_tfidf_feature()
-
-
-def _jaccard(args):
-    pipeline.create_jaccard_feature()
+def _evaluate(args):
+    pipeline.evaluate(**args)
 
 
 def _get_parser():
     """ Sets up a command line interface.
+
     Args:
         parser (ArgumentParser): Argument parser.
     """
@@ -32,17 +31,16 @@ def _get_parser():
                                      parents=[logging_args])
     subparsers = parser.add_subparsers(title='action', help='Action to perform')
 
-    # Parser to setup and preprocess the data
-    data_download = subparsers.add_parser('setup', help='Downloads and preprocesses the data')
+    # Parser to setup, preprocess and create features
+    data_download = subparsers.add_parser('setup', help='Setup, preprocess and create features')
     data_download.set_defaults(action=_setup)
 
     # Parser to create tfidf features
-    data_download = subparsers.add_parser('tfidf', help='Creates tfidf-features')
-    data_download.set_defaults(action=_tfidf)
-
-    # Parser to create jaccard feature
-    data_download = subparsers.add_parser('jaccard', help='Creates jaccard-features')
-    data_download.set_defaults(action=_jaccard)
+    data_download = subparsers.add_parser('evaluate', help='Evaluate point- and pairwise algorithms')
+    data_download.add_argument('--model', help='Model used. Options are nb, lr, mlp', type=str, default='nb')
+    data_download.add_argument('--pca', help='Decompose features into PCA components', type=int, default=0)
+    data_download.add_argument('--pairwise', help='Pairwise model. Options are ranknet', type=str, default=None)
+    data_download.set_defaults(action=_evaluate)
 
     return parser
 
