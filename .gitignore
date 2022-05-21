@@ -15,6 +15,7 @@ __pycache__
 /data/datasets
 /data/embeddings
 /data/thumbnails
+/notebooks/data
 /venv/
 
 
@@ -34,3 +35,21 @@ face-hunter.json
 
 * SSH keys
 *pub_key*
+
+data/*
+*.pkl
+notebooks/data/TREC_Passage/2019qrels-pass.txt
+notebooks/data/TREC_Passage/collection.tsv
+notebooks/data/TREC_Passage/msmarco-test2019-queries.tsv
+notebooks/data/TREC_Passage/qrels.dev.small.tsv
+notebooks/data/TREC_Passage/qidpidtriples.train.full.2.tsv
+notebooks/data/TREC_Passage/qrels.train.tsv
+notebooks/data/TREC_Passage/queries.dev.small.tsv
+notebooks/data/TREC_Passage/queries.dev.tsv
+notebooks/data/TREC_Passage/queries.eval.small.tsv
+notebooks/data/TREC_Passage/queries.eval.tsv
+notebooks/data/TREC_Passage/queries.train.tsv
+notebooks/data/TREC_Passage/queries2.dev.tsv
+notebooks/data/TREC_Passage/collection.tar.gz
+notebooks/data/TREC_Passage/msmarco-test2019-queries.tsv.gz
+notebooks/data/TREC_Passage/queries.tar.gz

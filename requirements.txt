@@ -1,0 +1,12 @@
+pandas
+tqdm
+requests
+numpy
+nltk
+scikit-learn
+textblob
+gensim
+sentence_transformers
+flair==0.11.1
+scikit-optimize
+seaborn
