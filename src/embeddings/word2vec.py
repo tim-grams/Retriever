@@ -160,8 +160,8 @@ class word2vec(object):
                     missing.append(word)
                     sen.append(np.zeros(100))
 
-
-            sen /= weight_sum
+            sen = np.array(sen)
+            sen = sen/weight_sum
             embeddings.append(np.array(sen).sum(axis=0))
         #print(str(len(missing)) + ' Unknown words replaced with zero vecs\n')
 
