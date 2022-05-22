@@ -11,8 +11,53 @@ from src.models.pairwise import pairwise_optimize
 
 
 class Evaluation(object):
+    ''' A class to create perform model evaluations.
+
+    Attributes:
+        previous_results (str): Path to previously stored results
+
+    Methods:
+    __call__(X_y_train: pd.DataFrame, X_test: pd.DataFrame, qrels: pd.DataFrame, k: int = 50,
+                 components_pca: int = 0, model=GaussianNB(), pairwise_model=None, pairwise_top_k: int = 50,
+                 pairwise_train: bool = True, name: str = None, save_result: bool = True):
+        INSERT_DESCRIPTION
+    hyperparameter_optimization(model, search_space, X_y_train: pd.DataFrame, X_test: pd.DataFrame,
+                                    X_val: pd.DataFrame, qrels: pd.DataFrame, qrels_val: pd.DataFrame,
+                                    k: int = 50, components_pca: int = 0, pairwise_model=None,
+                                    pairwise_top_k: int = 50, pairwise_train: bool = True,
+                                    trials: int = 50, name: str = None, save_result: bool = True):
+        Performs hyperparameter optimization.
+    feature_selection(model, search_space, X_y_train: pd.DataFrame, X_test: pd.DataFrame, X_val: pd.DataFrame,
+                            qrels: pd.DataFrame, qrels_val: pd.DataFrame, k: int = 50, components_pca: int = 0,
+                            save_results: bool = True, name: str = None):
+        Performs feature selection.
+    compute_metrics(model, X: pd.DataFrame, y, X_test, test_pair, qrels: pd.DataFrame, k: int = 50,
+                        components_pca: int = 0, pairwise_model=None, pairwise_top_k: int = 50,
+                        pairwise_train: bool = True, name: str = None, save_result: bool = False):
+        INSERT_DESCRIPTION
+    calculate_ranks(results: pd.DataFrame):
+        INSERT_DESCRIPTION
+    average_precision_score(results: pd.DataFrame):
+        INSERT_DESCRIPTION
+    mean_average_precision_score(results: pd.DataFrame):
+        INSERT_DESCRIPTION
+    metrics(results: pd.DataFrame, k: int = None):
+        INSERT_DESCRIPTION
+    normalized_discounted_cumulative_gain(results: pd.DataFrame):
+        INSERT_DESCRIPTION
+    mean_normalized_discounted_cumulative_gain_score(results: pd.DataFrame):
+        INSERT_DESCRIPTION
+    mean_reciprocal_rank(results: pd.DataFrame):
+    
+    '''    
 
     def __init__(self, previous_results: str = 'data/results/results.pkl'):
+        ''' Constructs Evaluation object. 
+        
+        Args: 
+            previous_results (str): Path to previously stored resultsl
+
+        '''
         self.previous_results = previous_results
 
         if os.path.exists(previous_results):
@@ -33,6 +78,25 @@ class Evaluation(object):
                  pairwise_train: bool = True,
                  name: str = None,
                  save_result: bool = True):
+        ''' INSERT_DESCRIPTION.
+    
+        Args:
+            X_y_train (pd.DataFrame):
+            X_test (pd.DataFrame):
+            qrels (pd.DataFrame):
+            k (int): 
+            components_pca (int):
+            model ():
+            pairwise_model (str):
+            pairwise_top_k (int):
+            pairwise_train (Boolean):
+            name (str):
+            save_result (Boolean):
+
+        Returns:
+            best_result (): 
+
+        '''  
         X, y, X_test, test_pair = split_and_scale(X_y_train, X_test, components_pca=components_pca)
         mrr = self.compute_metrics(model,
                                    X,
@@ -64,7 +128,28 @@ class Evaluation(object):
                                     name: str = None,
                                     save_result: bool = True
                                     ):
+        ''' Performs hyperparameter optimization.
+    
+        Args:
+            model ():
+            search_space ():
+            X_y_train (pd.DataFrame):
+            X_test (pd.DataFrame):
+            X_val (pd.DataFrame):
+            qrels (pd.DataFrame):
+            qrels_val (pd.DataFrame):
+            k (int): 
+            components_pca (int):
+            pairwise_model (str):
+            pairwise_top_k (int):
+            pairwise_train (Boolean):
+            name (str):
+            save_result (Boolean):
 
+        Returns:
+            best_result (): 
+
+        '''
         @use_named_args(search_space)
         def evaluate(**params):
             model.set_params(**params)
@@ -94,6 +179,25 @@ class Evaluation(object):
                           save_results: bool = True,
                           name: str = None
                           ):
+        ''' Performs feature selection.
+    
+        Args:
+            model ():
+            search_space ():
+            X_y_train (pd.DataFrame):
+            X_test (pd.DataFrame):
+            X_val (pd.DataFrame):
+            qrels (pd.DataFrame):
+            qrels_val (pd.DataFrame):
+            k (int): 
+            components_pca (int):
+            name (str):
+            save_result (Boolean):
+
+        Returns:
+            added_columns (list): 
+
+        '''
         features = list(X_y_train.drop(columns=['qID', 'pID', 'y']).columns)
         added_columns = []
 
@@ -145,6 +249,26 @@ class Evaluation(object):
                         pairwise_train: bool = True,
                         name: str = None,
                         save_result: bool = False):
+        ''' Computes metrics.
+    
+        Args:
+            model ():
+            x (pd.DataFrame):
+            y ():
+            test_pair ():
+            qrels (pd.DataFrame):
+            k (int): 
+            components_pca (int):
+            pairwise_model (str):
+            pairwise_top_k (int):
+            pairwise_train (Boolean):
+            name (str):
+            save_result (Boolean):
+
+        Returns:
+            mrr (): 
+
+        '''
         model.fit(X, y)
         confidences = pd.DataFrame(model.predict_proba(X_test))[1]
 
@@ -195,6 +319,15 @@ class Evaluation(object):
         return mrr
 
     def calculate_ranks(self, results: pd.DataFrame):
+        ''' Calculates ranks.
+    
+        Args:
+            results (pd.DataFrame):
+
+        Returns:
+            ranks (pd.DataFrame): 
+
+        '''
         ranks = results.sort_values('confidence', ascending=False)
         print(len(results))
         ranks['rank'] = np.arange(1, len(ranks) + 1)
@@ -203,6 +336,15 @@ class Evaluation(object):
         return ranks
 
     def average_precision_score(self, results: pd.DataFrame):
+        ''' Calculates average precision score.
+    
+        Args:
+            results (pd.DataFrame):
+
+        Returns:
+            sum / len(ranks) (float): 
+
+        '''
         ranks = self.calculate_ranks(results)
         sum = 0
         for index, data in ranks.iterrows():
@@ -210,6 +352,15 @@ class Evaluation(object):
         return sum / len(ranks)
 
     def mean_average_precision_score(self, results: pd.DataFrame):
+        ''' Calculates mean average precision score.
+    
+        Args:
+            results (pd.DataFrame):
+
+        Returns:
+            sum / len(qIDs) (float): 
+
+        '''        
         qIDs = results['qID'].unique()
         sum = 0
         for qID in qIDs:
@@ -217,6 +368,19 @@ class Evaluation(object):
         return sum / len(qIDs)
 
     def metrics(self, results: pd.DataFrame, k: int = None):
+        ''' Calculates metrics (accuracy, precision, recall, f1).
+    
+        Args:
+            results (pd.DataFrame):
+            k (int): 
+
+        Returns:
+            accuracy (float): Returns accuracy score of model
+            precision (float): Returns precision score of model
+            recall (float): Returns recall score of model
+            f_score (float): Returns f_score score of model
+
+        ''' 
         if k is not None:
             results = results.sort_values('confidence', ascending=False).groupby('qID').head(k)
 
@@ -241,6 +405,15 @@ class Evaluation(object):
         return accuracy, precision, recall, f_score
 
     def normalized_discounted_cumulative_gain(self, results: pd.DataFrame):
+        ''' Calculates normalized discounted cumulative gain.
+    
+        Args:
+            results (pd.DataFrame):
+
+        Returns:
+            dcg / idcg (float):
+
+        ''' 
         ranks = self.calculate_ranks(results)
         dcg = 0
         idcg = 0
@@ -250,6 +423,15 @@ class Evaluation(object):
         return dcg / idcg
 
     def mean_normalized_discounted_cumulative_gain_score(self, results: pd.DataFrame):
+        ''' Calculates mean normalized discounted cumulative gain score.
+    
+        Args:
+            results (pd.DataFrame):
+
+        Returns:
+            sum / len(qIDs):
+
+        ''' 
         qIDs = results['qID'].unique()
         sum = 0
         for qID in qIDs:
@@ -257,6 +439,15 @@ class Evaluation(object):
         return sum / len(qIDs)
 
     def mean_reciprocal_rank(self, results: pd.DataFrame):
+        ''' Calculates mean reciprocal rank.
+    
+        Args:
+            results (pd.DataFrame):
+
+        Returns:
+            sum / len(qIDs):
+
+        ''' 
         qIDs = results['qID'].unique()
         sum = 0
 
