@@ -24,7 +24,7 @@ class TFIDF(object):
     fitted = False
 
     def __init__(self, path: str = None):
-        ''' Constructs tfidf object using a pretrained model. 
+        ''' Constructs tfidf object. 
         
         Args: 
             path (str): Path of model

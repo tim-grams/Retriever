@@ -25,7 +25,74 @@ LOGGER = logging.getLogger('pipeline')
 
 
 class Pipeline(object):
-    """ Class to combine the different download, preprocessing, modeling and evaluation steps. """
+    """ Class to combine the different download, preprocessing, modeling and evaluation steps. 
+
+    Attributes:
+        collection (str): Imports collection data from .pkl file if not None
+        queries (str): Imports queries data from .pkl file if not None
+        queries_val (str): Imports queries_val data from .pkl file if not None
+        queries_test (str): Imports queries_test data from .pkl file if not None
+        features (pd.DataFrame): Imports features data from .pkl file if not None
+        qrels_val (str): Imports qrels_val data from .pkl file if not None
+        qrels_test (str): Imports qrels_test data from .pkl file if not None
+        features_test (pd.DataFrame): Imports features_test data from .pkl file if not None
+        features_val (pd.DataFrame): Imports features_val data from .pkl file if not None
+
+
+    Methods:
+    setup(qrel_sampling: int = 20, training_sampling: int = 200, irrelevant_sampling: int = 0,
+              datasets: list = None, path: str = 'data/TREC_Passage'):
+        Calls import methods from datasets.py for specified datasets
+    preprocess(expansion=False):
+        Calls preprocess method from preprocess.py
+    create_tfidf_embeddings():
+        Calls create_tfidf_embeddings method from generator.py
+    create_w2v_embeddings():
+        Calls create_w2v_embeddings method from generator.py
+    create_w2v_embeddings_tfidf_weighted():
+        Calls create_w2v_embeddings_tfidf_weighted method from generator.py
+    create_w2v_feature(path_collection: str = 'data/embeddings/w2v_collection_embeddings.pkl',
+                           path_query: str = 'data/embeddings/w2v_query_embeddings.pkl'):
+        Calls create_w2v_feature method from generator.py
+    create_bert_embeddings():
+        Calls create_bert_embeddings method from generator.py
+    create_glove_embeddings():
+        Calls create_glove_embeddings method from generator.py
+    create_glove_embeddings_tfidf_weighted():
+        Calls create_glove_embeddings_tfidf_weighted method from generator.py
+    create_tfidf_feature(path_collection: str = 'data/embeddings/tfidf_collection_embeddings.pkl',
+                                path_query: str = 'data/embeddings/tfidf_query_embeddings.pkl'):
+        Calls create_tfidf_feature method from generator.py
+    create_bert_feature(path_collection: str = 'data/embeddings/bert_collection_embeddings.pkl',
+                                path_query: str = 'data/embeddings/bert_query_embeddings.pkl'):
+        Calls create_bert_feature method from generator.py						
+    create_glove_feature(path_collection: str = 'data/embeddings/glove_collection_embeddings.pkl',
+                                path_query: str = 'data/embeddings/glove_query_embeddings.pkl'):
+        Calls create_glove_feature method from generator.py	
+    create_jaccard_feature():
+	    Calls create_jaccard_feature method from generator.py
+    create_sentence_features():
+        Calls create_sentence_features method from generator.py
+    create_interpretation_features():
+        Calls create_interpretation_features method from generator.py
+    create_POS_features():
+        Calls create_POS_features method from generator.py
+    create_BM25_features():
+        Calls create_BM25_features method from generator.py
+    create_test_features():
+	    Creates test features from datasets "queries_test" and "collection"
+    create_val_features():
+	    Creates new DataFrame "create_val_features" from datasets "queries_val" and "collection"
+    evaluate(model: str = 'nb', pca: int = 0, pairwise_model: str = None, pairwise_top_k: int = 50, 
+                                search_space: list = None, models_path: str = None, store_model_path: str = None):		
+	    Evaluates the performance of the model
+    forward_selection(model: str = 'nb', pca: int = 0, search_space: list = None):
+	    Performs forward feature selection to determine best features
+    save(name: str, path: str = 'data/processed'):
+	    Saves created DataFrames as .pkl files
+
+
+    """
 
     collection = None
     queries = None
@@ -40,6 +107,20 @@ class Pipeline(object):
     def __init__(self, collection: str = None, queries: str = None, queries_val: str = None, queries_test: str = None,
                  features: str = None, qrels_val: str = None, qrels_test: str = None, features_test: str = None,
                  features_val: str = None):
+        ''' Constructs pipeline object with all necessary attributes. 
+        
+        Args: 
+            collection (str): Imports collection data from .pkl file if not None
+            queries (str): Imports queries data from .pkl file if not None
+            queries_val (str): Imports queries_val data from .pkl file if not None
+            queries_test (str): Imports queries_test data from .pkl file if not None
+            features (str): Imports features data from .pkl file if not None
+            qrels_val (str): Imports qrels_val data from .pkl file if not None
+            qrels_test (str): Imports qrels_test data from .pkl file if not None
+            features_test (str): Imports features_test data from .pkl file if not None
+            features_val (str): Imports features_val data from .pkl file if not None
+
+        '''
         if qrels_val is not None:
             self.qrels_val = pd.read_pickle(qrels_val)
         if qrels_test is not None:
@@ -61,6 +142,19 @@ class Pipeline(object):
 
     def setup(self, qrel_sampling: int = 20, training_sampling: int = 200, irrelevant_sampling: int = 0,
               datasets: list = None, path: str = 'data/TREC_Passage'):
+        ''' Calls import methods from datasets.py for specified datasets.
+    
+        Args:
+            qrel_sampling (int): Specifies number samples from "2019qrels-pass.txt"
+            training_sampling (int): Specifies number samples from "qidpidtriples.train.full.2.tsv"
+            irrelevant_sampling (int):
+            datasets (list): List of datasets to consider
+            path (str): Path to datasets
+
+        Returns:
+            none
+
+        '''     
         if datasets is None:
             datasets = ['collection.tsv', 'queries.train.tsv', 'msmarco-test2019-queries.tsv', '2019qrels-pass.txt',
                         '2020qrels-pass.txt', 'qidpidtriples.train.full.2.tsv', 'msmarco-test2020-queries.tsv']
@@ -86,6 +180,19 @@ class Pipeline(object):
         return self
 
     def preprocess(self, expansion=False):
+        ''' Calls preprocess method from preprocess.py and appends "preprocessed" columns to DataFrames (collection, queries, queries_val, queries_test).
+    
+        Args:
+            qrel_sampling (int): Specifies number samples from "2019qrels-pass.txt"
+            training_sampling (int): Specifies number samples from "qidpidtriples.train.full.2.tsv"
+            irrelevant_sampling (int):
+            datasets (list): List of datasets to consider
+            path (str): Path to datasets
+
+        Returns:
+            none
+
+        '''   
         LOGGER.info('Preprocessing collection')
         self.collection['preprocessed'] = preprocess(self.collection.Passage)
 
@@ -101,6 +208,8 @@ class Pipeline(object):
         return self
 
     def create_tfidf_embeddings(self):
+        ''' Calls create_tfidf_embeddings method from generator.py. '''
+
         assert self.collection['preprocessed'] is not None, "Preprocess the data first"
 
         tfidf, self.collection = create_tfidf_embeddings(self.collection, name='collection')
@@ -111,6 +220,8 @@ class Pipeline(object):
         return self
 
     def create_w2v_embeddings_tfidf_weighted(self):
+        ''' Calls create_w2v_embeddings_tfidf_weighted method from generator.py. '''
+
         assert self.collection['preprocessed'] is not None, "Preprocess the data first"
         assert self.collection['tfidf'] is not None, "Create tfidf first!"
         assert self.queries['tfidf'] is not None, "Create tfidf first!"
@@ -126,6 +237,8 @@ class Pipeline(object):
 
 
     def create_w2v_embeddings(self):
+        ''' Calls create_w2v_embeddings method from generator.py. '''
+
         assert self.collection['preprocessed'] is not None, "Preprocess the data first"
 
         w2v, self.collection = create_w2v_embeddings(self.collection, name='collection')
@@ -137,17 +250,38 @@ class Pipeline(object):
     
     def create_w2v_feature(self, path_collection: str = 'data/embeddings/w2v_collection_embeddings.pkl',
                            path_query: str = 'data/embeddings/w2v_query_embeddings.pkl'):
+        ''' Calls create_w2v_feature method from generator.py.
+    
+        Args:
+            path_collection (str): Path to "w2v_collection_embeddings.pkl"
+            path_query (str): Path to "w2v_collection_embeddings.pkl"
+
+        Returns:
+            none
+
+        '''     
         self.features = create_w2v_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self
 
     def create_w2v_tfidf_feature(self, path_collection: str = 'data/embeddings/w2v_tfidf_collection_embeddings.pkl',
                            path_query: str = 'data/embeddings/w2v_tfidf_query_embeddings.pkl'):
+        ''' Calls create_w2v_tfidf_feature method from generator.py.
+    
+        Args:
+            path_collection (str): Path to "w2v_tfidf_collection_embeddings.pkl"
+            path_query (str): Path to "w2v_tfidf_query_embeddings.pkl"
+
+        Returns:
+            none
+
+        '''  
         self.features = create_w2v_tfidf_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self
 
     def create_bert_embeddings(self):
+        ''' Calls create_bert_embeddings method from generator.py. '''
 
         bert, self.collection = create_bert_embeddings(self.collection, name='collection')
         bert, self.queries = create_bert_embeddings(self.queries, bert=bert, name='query')
@@ -155,6 +289,7 @@ class Pipeline(object):
         bert, self.queries_test = create_bert_embeddings(self.queries_test, bert=bert, name='query_test')
 
     def create_glove_embeddings(self):
+        ''' Calls create_glove_embeddings method from generator.py. '''
         assert self.collection['preprocessed'] is not None, "Preprocess the data first"
 
         glove, self.collection = create_glove_embeddings(self.collection, name='collection')
@@ -165,6 +300,8 @@ class Pipeline(object):
         return self
 
     def create_glove_embeddings_tfidf_weighted(self):
+        ''' Calls create_glove_embeddings_tfidf_weighted method from generator.py. '''
+
         assert self.collection['preprocessed'] is not None, "Preprocess the data first"
 
         tfidf, self.collection = create_tfidf_embeddings(self.collection, name='collection')
@@ -174,53 +311,90 @@ class Pipeline(object):
 
     def create_tfidf_feature(self, path_collection: str = 'data/embeddings/tfidf_collection_embeddings.pkl',
                              path_query: str = 'data/embeddings/tfidf_query_embeddings.pkl'):
+        ''' Calls create_tfidf_feature method from generator.py.
+    
+        Args:
+            path_collection (str): Path to "tfidf_collection_embeddings.pkl"
+            path_query (str): Path to "tfidf_query_embeddings.pkl"
+
+        Returns:
+            none
+
+        '''      
         self.features = create_tfidf_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self
 
     def create_bert_feature(self, path_collection: str = 'data/embeddings/bert_collection_embeddings.pkl',
                             path_query: str = 'data/embeddings/bert_query_embeddings.pkl'):
+        ''' Calls create_bert_feature method from generator.py.
+    
+        Args:
+            path_collection (str): Path to "bert_collection_embeddings.pkl"
+            path_query (str): Path to "bert_query_embeddings.pkl"
+
+        Returns:
+            none
+
+        '''  
         self.features = create_bert_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self
 
     def create_glove_feature(self, path_collection: str = 'data/embeddings/glove_collection_embeddings.pkl',
                              path_query: str = 'data/embeddings/glove_query_embeddings.pkl'):
+        ''' Calls create_glove_feature method from generator.py.
+    
+        Args:
+            path_collection (str): Path to "glove_collection_embeddings.pkl"
+            path_query (str): Path to "glove_query_embeddings.pkl"
+
+        Returns:
+            none
+
+        ''' 
         self.features = create_glove_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self
 
     def create_jaccard_feature(self):
+        ''' Calls create_jaccard_feature method from generator.py. '''
         self.features = create_jaccard_feature(self.features, self.collection, self.queries)
 
         return self
 
     def create_sentence_features(self):
+        ''' Calls create_sentence_features method from generator.py. '''
         self.features = create_sentence_features(self.features, self.collection, self.queries)
 
         return self
 
     def create_interpretation_features(self):
+        ''' Calls create_interpretation_features method from generator.py. '''
         self.features = create_interpretation_features(self.features, self.collection, self.queries)
 
         return self
 
     def create_POS_features(self):
+        ''' Calls create_POS_features method from generator.py. '''
         self.features = create_POS_features(self.features, self.collection, self.queries)
 
         return self
 
     def create_BM25_features(self):
+        ''' Calls create_BM25_features method from generator.py. '''
         self.features = create_BM2_feature(self.features, self.collection, self.queries)
 
         return self
 
     def create_train_features(self):
+        ''' Calls create_train_features method from generator.py. '''
         self.features = create_all(self.features, self.collection, self.queries)
 
         return self
 
     def create_test_features(self):
+        ''' Creates test features from datasets "queries_test" and "collection" and calls create_all method from generator.py '''
         for index, query in self.queries_test.iterrows():
             self.features_test = pd.concat([self.features_test, pd.DataFrame({
                 'qID': [query['qID']] * len(self.collection),
@@ -229,6 +403,7 @@ class Pipeline(object):
         self.features_test = create_all(self.features_test, self.collection, self.queries_test)
 
     def create_val_features(self):
+        ''' Creates val features from datasets "queries_val" and "collection" and calls create_all method from generator.py '''
         for index, query in self.queries_val.iterrows():
             self.features_val = pd.concat([self.features_val, pd.DataFrame({
                 'qID': [query['qID']] * len(self.collection),
@@ -239,6 +414,21 @@ class Pipeline(object):
     def evaluate(self, model: str = 'nb', pca: int = 0,
                  pairwise_model: str = None, pairwise_top_k: int = 50, search_space: list = None,
                  models_path: str = None, store_model_path: str = None):
+        ''' Evaluates the performance of the model.
+    
+        Args:
+            model (str): Specify model to test performance on
+            pca (int):
+            pairwise_model (str): 
+            pairwise_top_k (int): 
+            search_space (list): 
+            models_path (str): 
+            store_model_path (str): Path to store model to
+
+        Returns:
+            none
+
+        '''     
         evaluation = Evaluation()
         if model == 'nb':
             model_to_test = GaussianNB()
@@ -277,6 +467,17 @@ class Pipeline(object):
             torch.save(pairwise_model, store_model_path)
 
     def forward_selection(self, model: str = 'nb', pca: int = 0, search_space: list = None):
+        ''' Performs forward feature selection to determine best features.
+    
+        Args:
+            model (str): Specify model to test performance on
+            pca (int):
+            search_space (list): 
+
+        Returns:
+            none
+
+        '''  
         evaluation = Evaluation()
         if model == 'nb':
             model_to_test = GaussianNB()
@@ -291,6 +492,16 @@ class Pipeline(object):
                                      50, pca)
 
     def save(self, name: str, path: str = 'data/processed'):
+        ''' Saves created DataFrames as .pkl files.
+    
+        Args:
+            name (str): Specify name of dataset
+            path (str): Path to store dataset to
+
+        Returns:
+            none
+        
+        '''
         assert name is not None, 'Please provide experiment name'
 
         check_path_exists(path)
