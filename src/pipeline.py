@@ -14,6 +14,9 @@ from src.models.training import Evaluation
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from src.models.ranknet import RankNet
 import torch
 
@@ -212,6 +215,14 @@ class Pipeline(object):
             model_to_test = GaussianNB()
         elif model == 'lr':
             model_to_test = LogisticRegression()
+        elif model == 'svm':
+            model_to_test = SVC(probability=True)
+        elif model == 'dt':
+            model_to_test = DecisionTreeClassifier()
+        elif model == 'rf':
+            model_to_test = RandomForestClassifier()
+        elif model == 'ada':
+            model_to_test = AdaBoostClassifier()
         else:
             model_to_test = MLPClassifier()
 

@@ -31,6 +31,7 @@ class Evaluation(object):
                  pairwise_model=None,
                  pairwise_top_k: int = 50,
                  pairwise_train: bool = True,
+                 name: str = None,
                  save_result: bool = True):
         X, y, X_test, test_pair = split_and_scale(X_y_train, X_test, components_pca=components_pca)
         mrr = self.compute_metrics(model,
@@ -44,6 +45,7 @@ class Evaluation(object):
                                    pairwise_model,
                                    pairwise_top_k,
                                    pairwise_train,
+                                   name=name,
                                    save_result=save_result)
         print(f'MRR: {mrr}')
 
@@ -59,13 +61,14 @@ class Evaluation(object):
                                     pairwise_top_k: int = 50,
                                     pairwise_train: bool = True,
                                     trials: int = 50,
+                                    name: str = None,
                                     save_result: bool = True
                                     ):
 
         @use_named_args(search_space)
         def evaluate(**params):
             model.set_params(**params)
-            return self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca, pairwise_model, pairwise_top_k, pairwise_train)
+            return self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca, pairwise_model, pairwise_top_k, pairwise_train, name=name)
 
         X, y, X_test, test_pair, X_val, val_pair = split_and_scale(X_y_train, X_test, X_val, components_pca)
         best_result = gp_minimize(evaluate, search_space, n_calls=trials)
@@ -76,7 +79,7 @@ class Evaluation(object):
         for space, value in zip(search_space, best_result.x):
             best_params_dict[space.name] = value
         print(
-            f'MRR on test set: {self.compute_metrics(model.set_params(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca, pairwise_model, pairwise_top_k, pairwise_train, save_result=save_result)}')
+            f'MRR on test set: {self.compute_metrics(model.set_params(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca, pairwise_model, pairwise_top_k, pairwise_train, name=name, save_result=save_result)}')
 
         return best_result.fun
 
@@ -88,7 +91,8 @@ class Evaluation(object):
                           qrels_val: pd.DataFrame,
                           k: int = 50,
                           components_pca: int = 0,
-                          save_results: bool = True
+                          save_results: bool = True,
+                          name: str = None
                           ):
         features = list(X_y_train.drop(columns=['qID', 'pID', 'y']).columns)
         added_columns = []
@@ -110,6 +114,7 @@ class Evaluation(object):
                                                                qrels_val,
                                                                k,
                                                                components_pca,
+                                                               name=name,
                                                                save_result=save_results)
                 if performance > current_performance and performance > current_best[1]:
                     current_best = (feature, performance)
@@ -138,6 +143,7 @@ class Evaluation(object):
                         pairwise_model=None,
                         pairwise_top_k: int = 50,
                         pairwise_train: bool = True,
+                        name: str = None,
                         save_result: bool = False):
         model.fit(X, y)
         confidences = pd.DataFrame(model.predict_proba(X_test))[1]
@@ -157,13 +163,14 @@ class Evaluation(object):
 
         mrr = self.mean_reciprocal_rank(results)
         map = self.mean_average_precision_score(results)
-        ndcg = self.normalized_discounted_cumulative_gain(results)
+        ndcg = self.mean_normalized_discounted_cumulative_gain_score(results)
         metrics = self.metrics(results)
         k_metrics = self.metrics(results, k)
 
         if save_result:
             self.results = pd.concat([self.results,
-                                      pd.DataFrame({'model': str(model),
+                                      pd.DataFrame({'name': name,
+                                                    'model': str(model),
                                                     'hyperparameters': json.dumps(model.get_params()),
                                                     'pairwise_model': pairwise_model,
                                                     'pairwise_k': pairwise_top_k if pairwise_model is not None else None,
@@ -189,6 +196,7 @@ class Evaluation(object):
 
     def calculate_ranks(self, results: pd.DataFrame):
         ranks = results.sort_values('confidence', ascending=False)
+        print(len(results))
         ranks['rank'] = np.arange(1, len(ranks) + 1)
         ranks = ranks[ranks['relevant'] >= 1]
         ranks.index = np.arange(1, len(ranks) + 1)
@@ -249,10 +257,12 @@ class Evaluation(object):
         return sum / len(qIDs)
 
     def mean_reciprocal_rank(self, results: pd.DataFrame):
-        ranks = self.calculate_ranks(results)
-        ranks = ranks.sort_values('rank', ascending=False).groupby('qID').head(1)
-
+        qIDs = results['qID'].unique()
         sum = 0
-        for index, result in ranks.iterrows():
-            sum += (1 / result['rank'])
-        return sum / len(ranks)
+
+        for qID in qIDs:
+            ranks = self.calculate_ranks(results[results['qID'] == qID])
+            ranks = ranks.sort_values('rank', ascending=False).iloc[0]
+            sum += (1 / ranks['rank'])
+
+        return sum / len(qIDs)
