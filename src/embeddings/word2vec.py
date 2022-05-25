@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 import os
 from tqdm import tqdm
+import logging
+
+LOGGER = logging.getLogger('word2ved')
 
 
 class word2vec(object):
@@ -159,9 +162,10 @@ class word2vec(object):
                     #print(word + ' not in vocabular')
                     missing.append(word)
                     sen.append(np.zeros(100))
-
-            sen = np.array(sen)
-            sen = sen/weight_sum
+            try:
+                sen /= weight_sum
+            except Exception:
+                LOGGER.debug('Division by zero')
             embeddings.append(np.array(sen).sum(axis=0))
         #print(str(len(missing)) + ' Unknown words replaced with zero vecs\n')
 

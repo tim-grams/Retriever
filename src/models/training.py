@@ -329,7 +329,6 @@ class Evaluation(object):
 
         '''
         ranks = results.sort_values('confidence', ascending=False)
-        print(len(results))
         ranks['rank'] = np.arange(1, len(ranks) + 1)
         ranks = ranks[ranks['relevant'] >= 1]
         ranks.index = np.arange(1, len(ranks) + 1)
