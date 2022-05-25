@@ -13,7 +13,7 @@ import logging
 import os
 from src.utils.utils import check_path_exists
 from src.models.training import Evaluation
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
@@ -433,8 +433,12 @@ class Pipeline(object):
 
         '''
         evaluation = Evaluation()
-        if model == 'nb':
+        if model == 'nbg':
             model_to_test = GaussianNB()
+        if model == 'nbn':
+            model_to_test = MultinomialNB()
+        if model == 'nbb':
+            model_to_test = BernoulliNB()
         elif model == 'lr':
             model_to_test = LogisticRegression()
         elif model == 'svm':
