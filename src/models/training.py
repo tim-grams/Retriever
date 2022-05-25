@@ -153,7 +153,7 @@ class Evaluation(object):
         @use_named_args(search_space)
         def evaluate(**params):
             model.set_params(**params)
-            return self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca, pairwise_model, pairwise_top_k, pairwise_train, name=name)
+            return -1 * self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca, pairwise_model, pairwise_top_k, pairwise_train, name=name)
 
         X, y, X_test, test_pair, X_val, val_pair = split_and_scale(X_y_train, X_test, X_val, components_pca)
         best_result = gp_minimize(evaluate, search_space, n_calls=trials)
@@ -295,7 +295,7 @@ class Evaluation(object):
             self.results = pd.concat([self.results,
                                       pd.DataFrame({'name': name,
                                                     'model': str(model),
-                                                    'hyperparameters': json.dumps(model.get_params()),
+                                                    'hyperparameters': str(model.get_params()),
                                                     'pairwise_model': pairwise_model,
                                                     'pairwise_k': pairwise_top_k if pairwise_model is not None else None,
                                                     'features': json.dumps(list(X.columns)),

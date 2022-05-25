@@ -3,8 +3,10 @@ from src.data.dataset import import_val_test_queries, import_queries, import_col
 import pandas as pd
 from tqdm import tqdm
 from src.data.preprocessing import preprocess
-from src.features.generator import create_bert_embeddings, create_bert_feature, create_glove_embeddings_tf_idf_weighted, create_glove_feature, \
-    create_glove_embeddings, create_w2v_embeddings, create_w2v_embeddings_tf_idf_weighted, create_w2v_feature, create_tfidf_embeddings, create_all, \
+from src.features.generator import create_bert_embeddings, create_bert_feature, create_glove_embeddings_tf_idf_weighted, \
+    create_glove_feature, \
+    create_glove_embeddings, create_w2v_embeddings, create_w2v_embeddings_tf_idf_weighted, create_w2v_feature, \
+    create_tfidf_embeddings, create_all, \
     create_BM2_feature, create_tfidf_feature, create_jaccard_feature, create_POS_features, \
     create_interpretation_features, create_sentence_features, create_w2v_tfidf_feature
 import logging
@@ -16,9 +18,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
 from src.models.ranknet import RankNet
 import torch
+from src.utils.utils import check_path_exists
 
 tqdm.pandas()
 LOGGER = logging.getLogger('pipeline')
@@ -154,7 +157,7 @@ class Pipeline(object):
         Returns:
             none
 
-        '''     
+        '''
         if datasets is None:
             datasets = ['collection.tsv', 'queries.train.tsv', 'msmarco-test2019-queries.tsv', '2019qrels-pass.txt',
                         '2020qrels-pass.txt', 'qidpidtriples.train.full.2.tsv', 'msmarco-test2020-queries.tsv']
@@ -192,7 +195,7 @@ class Pipeline(object):
         Returns:
             none
 
-        '''   
+        '''
         LOGGER.info('Preprocessing collection')
         self.collection['preprocessed'] = preprocess(self.collection.Passage)
 
@@ -235,7 +238,6 @@ class Pipeline(object):
 
         return self
 
-
     def create_w2v_embeddings(self):
         ''' Calls create_w2v_embeddings method from generator.py. '''
 
@@ -247,7 +249,7 @@ class Pipeline(object):
         w2v, self.queries_test = create_w2v_embeddings(self.queries_test, w2v=w2v, name='query_test')
 
         return self
-    
+
     def create_w2v_feature(self, path_collection: str = 'data/embeddings/w2v_collection_embeddings.pkl',
                            path_query: str = 'data/embeddings/w2v_query_embeddings.pkl'):
         ''' Calls create_w2v_feature method from generator.py.
@@ -259,13 +261,13 @@ class Pipeline(object):
         Returns:
             none
 
-        '''     
+        '''
         self.features = create_w2v_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self
 
     def create_w2v_tfidf_feature(self, path_collection: str = 'data/embeddings/w2v_tfidf_collection_embeddings.pkl',
-                           path_query: str = 'data/embeddings/w2v_tfidf_query_embeddings.pkl'):
+                                 path_query: str = 'data/embeddings/w2v_tfidf_query_embeddings.pkl'):
         ''' Calls create_w2v_tfidf_feature method from generator.py.
     
         Args:
@@ -275,8 +277,9 @@ class Pipeline(object):
         Returns:
             none
 
-        '''  
-        self.features = create_w2v_tfidf_feature(self.features, self.collection, self.queries, path_collection, path_query)
+        '''
+        self.features = create_w2v_tfidf_feature(self.features, self.collection, self.queries, path_collection,
+                                                 path_query)
 
         return self
 
@@ -307,7 +310,6 @@ class Pipeline(object):
         tfidf, self.collection = create_tfidf_embeddings(self.collection, name='collection')
         glove, self.collection = create_glove_embeddings_tf_idf_weighted(self.collection, name='collection')
         return self.save()
-        
 
     def create_tfidf_feature(self, path_collection: str = 'data/embeddings/tfidf_collection_embeddings.pkl',
                              path_query: str = 'data/embeddings/tfidf_query_embeddings.pkl'):
@@ -320,7 +322,7 @@ class Pipeline(object):
         Returns:
             none
 
-        '''      
+        '''
         self.features = create_tfidf_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self
@@ -336,7 +338,7 @@ class Pipeline(object):
         Returns:
             none
 
-        '''  
+        '''
         self.features = create_bert_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self
@@ -352,7 +354,7 @@ class Pipeline(object):
         Returns:
             none
 
-        ''' 
+        '''
         self.features = create_glove_feature(self.features, self.collection, self.queries, path_collection, path_query)
 
         return self
@@ -411,12 +413,13 @@ class Pipeline(object):
             })])
         self.features_val = create_all(self.features_val, self.collection, self.queries_val)
 
-    def evaluate(self, model: str = 'nb', pca: int = 0,
-                 pairwise_model: str = None, pairwise_top_k: int = 50, search_space: list = None,
+    def evaluate(self, name: str = None, model: str = 'nb', pca: int = 0,
+                 pairwise_model: str = None, pairwise_top_k: int = 50, search_space: list = None, trials: int = 20,
                  models_path: str = None, store_model_path: str = None):
         ''' Evaluates the performance of the model.
     
         Args:
+            namne (str): Give the experiment a name
             model (str): Specify model to test performance on
             pca (int):
             pairwise_model (str): 
@@ -428,7 +431,7 @@ class Pipeline(object):
         Returns:
             none
 
-        '''     
+        '''
         evaluation = Evaluation()
         if model == 'nb':
             model_to_test = GaussianNB()
@@ -442,6 +445,8 @@ class Pipeline(object):
             model_to_test = RandomForestClassifier()
         elif model == 'ada':
             model_to_test = AdaBoostClassifier()
+        elif model == 'gb':
+            model_to_test = GradientBoostingClassifier()
         else:
             model_to_test = MLPClassifier()
 
@@ -459,11 +464,14 @@ class Pipeline(object):
         if search_space is not None:
             evaluation.hyperparameter_optimization(model_to_test, search_space, self.features,
                                                    self.features_test, self.features_val,
-                                                   self.qrels_test, self.qrels_val, 50, pca, pairwise_model, pairwise_top_k, pairwise_train, 50)
+                                                   self.qrels_test, self.qrels_val, 50, pca, pairwise_model,
+                                                   pairwise_top_k, pairwise_train, trials=trials, name=name)
         else:
-            evaluation(self.features, self.features_test, self.qrels_test, 50, pca, model_to_test, pairwise_model, pairwise_top_k, pairwise_train)
+            evaluation(self.features, self.features_test, self.qrels_test, 50, pca, model_to_test, pairwise_model,
+                       pairwise_top_k, pairwise_train, name=name)
 
         if store_model_path is not None:
+            check_path_exists(os.path.dirname(store_model_path))
             torch.save(pairwise_model, store_model_path)
 
     def forward_selection(self, model: str = 'nb', pca: int = 0, search_space: list = None):
@@ -477,7 +485,7 @@ class Pipeline(object):
         Returns:
             none
 
-        '''  
+        '''
         evaluation = Evaluation()
         if model == 'nb':
             model_to_test = GaussianNB()
