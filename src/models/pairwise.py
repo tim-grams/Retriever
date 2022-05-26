@@ -6,9 +6,9 @@ from itertools import combinations
 
 
 def create_dataloader(X, y, batch_size: int = 50) -> DataLoader:
-    ''' . 
-    
-    Args: 
+    """ .
+
+    Args:
         X ():
         y ():
         batch_size (int):
@@ -16,7 +16,7 @@ def create_dataloader(X, y, batch_size: int = 50) -> DataLoader:
     Returns:
         :
 
-    '''
+    """
     X_relevant = X[y.reset_index(drop=True) == 1]
     X_irrelevant = X[y.reset_index(drop=True) == 0]
 
@@ -28,9 +28,9 @@ def create_dataloader(X, y, batch_size: int = 50) -> DataLoader:
 
 
 def train_pairwise(network, X, y, num_epochs: int = 20):
-    ''' . 
-    
-    Args: 
+    """ .
+
+    Args:
         network ()
         X (int):
         y (int):
@@ -39,7 +39,7 @@ def train_pairwise(network, X, y, num_epochs: int = 20):
     Returns:
         :
 
-        '''
+        """
 
     train_loader = create_dataloader(X, y)
 
@@ -74,9 +74,9 @@ def train_pairwise(network, X, y, num_epochs: int = 20):
 
 
 def create_test_combinations(top: pd.DataFrame, k: int = 50) -> tuple:
-    ''' Creates test combinations. 
-    
-    Args: 
+    """ Creates test combinations.
+
+    Args:
         top (pd.DataFrame)
         k (int):
 
@@ -84,7 +84,7 @@ def create_test_combinations(top: pd.DataFrame, k: int = 50) -> tuple:
         X_relevant_test ():
         X_irrelevant_test ():
 
-    '''
+    """
     X_relevant_test = pd.DataFrame()
     X_irrelevant_test = pd.DataFrame()
     for comb in list(combinations(range(k), 2)):
@@ -97,16 +97,16 @@ def create_test_combinations(top: pd.DataFrame, k: int = 50) -> tuple:
 
 
 def bubble_sort(pairwise_results, documents) -> list:
-    ''' . 
-    
-    Args: 
+    """ .
+
+    Args:
         pairwise_results (list)
         documents (list):
 
     Returns:
         documents (list):
 
-    '''
+    """
     swapped = True
     while swapped:
         swapped = False
@@ -129,22 +129,22 @@ def bubble_sort(pairwise_results, documents) -> list:
 
 
 def pairwise_optimize(model, results: pd.DataFrame, X, y, X_test, top_k: int = 50, train: bool = True) -> pd.DataFrame:
-    ''' . 
-    
-    Args: 
+    """ .
+
+    Args:
         model ():
         results (pd.DataFrame):
         X ():
         y (pd.DataFrame):
         X_test ():
         top_k (int):
-        train (Boolean): 
+        train (Boolean):
 
 
     Returns:
         results (pd.DataFrame):
 
-    '''
+    """
     if train:
         train_pairwise(model, X, y)
 

@@ -435,9 +435,9 @@ class Pipeline(object):
         evaluation = Evaluation()
         if model == 'nbg':
             model_to_test = GaussianNB()
-        if model == 'nbn':
+        elif model == 'nbn':
             model_to_test = MultinomialNB()
-        if model == 'nbb':
+        elif model == 'nbb':
             model_to_test = BernoulliNB()
         elif model == 'lr':
             model_to_test = LogisticRegression()
@@ -478,7 +478,7 @@ class Pipeline(object):
             check_path_exists(os.path.dirname(store_model_path))
             torch.save(pairwise_model, store_model_path)
 
-    def forward_selection(self, model: str = 'nb', pca: int = 0, search_space: list = None):
+    def forward_selection(self, model: str = 'nb', pca: int = 0, name=None):
         ''' Performs forward feature selection to determine best features.
     
         Args:
@@ -498,10 +498,10 @@ class Pipeline(object):
         else:
             model_to_test = MLPClassifier()
 
-        evaluation.feature_selection(model_to_test, search_space, self.features,
-                                     self.features_test, self.features_val,
-                                     self.qrels_test, self.qrels_val,
-                                     50, pca)
+        return evaluation.feature_selection(model_to_test, self.features,
+                                            self.features_test,
+                                            self.qrels_test,
+                                            50, pca, name=name)
 
     def save(self, name: str, path: str = 'data/processed'):
         ''' Saves created DataFrames as .pkl files.

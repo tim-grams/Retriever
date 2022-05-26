@@ -11,7 +11,7 @@ from src.models.pairwise import pairwise_optimize
 
 
 class Evaluation(object):
-    ''' A class to create perform model evaluations.
+    """ A class to create perform model evaluations.
 
     Attributes:
         previous_results (str): Path to previously stored results
@@ -34,30 +34,30 @@ class Evaluation(object):
     compute_metrics(model, X: pd.DataFrame, y, X_test, test_pair, qrels: pd.DataFrame, k: int = 50,
                         components_pca: int = 0, pairwise_model=None, pairwise_top_k: int = 50,
                         pairwise_train: bool = True, name: str = None, save_result: bool = False):
-        INSERT_DESCRIPTION
+        Calculates metrics and saves them in a dataframe locally.
     calculate_ranks(results: pd.DataFrame):
-        INSERT_DESCRIPTION
+        Returns relevant documents with their corresponding rank
     average_precision_score(results: pd.DataFrame):
-        INSERT_DESCRIPTION
+        Calculates Average Precision
     mean_average_precision_score(results: pd.DataFrame):
-        INSERT_DESCRIPTION
+        Calculates Mean Average Precision for a set of queries
     metrics(results: pd.DataFrame, k: int = None):
-        INSERT_DESCRIPTION
+        Calculates accuracy, precision, recall and f1 globally and in the top-k area
     normalized_discounted_cumulative_gain(results: pd.DataFrame):
-        INSERT_DESCRIPTION
+        Calculates Normalized Discounted Cumulative Gain
     mean_normalized_discounted_cumulative_gain_score(results: pd.DataFrame):
-        INSERT_DESCRIPTION
+        Calculates Mean Normalized Cumulative Gain
     mean_reciprocal_rank(results: pd.DataFrame):
-    
-    '''    
+        Calculates Mean Reciprocal Rank
+    """
 
     def __init__(self, previous_results: str = 'data/results/results.pkl'):
-        ''' Constructs Evaluation object. 
-        
-        Args: 
+        """ Constructs Evaluation object.
+
+        Args:
             previous_results (str): Path to previously stored resultsl
 
-        '''
+        """
         self.previous_results = previous_results
 
         if os.path.exists(previous_results):
@@ -78,25 +78,25 @@ class Evaluation(object):
                  pairwise_train: bool = True,
                  name: str = None,
                  save_result: bool = True):
-        ''' INSERT_DESCRIPTION.
-    
+        """ Evaluates model given data.
+
         Args:
-            X_y_train (pd.DataFrame):
-            X_test (pd.DataFrame):
-            qrels (pd.DataFrame):
-            k (int): 
-            components_pca (int):
-            model ():
-            pairwise_model (str):
-            pairwise_top_k (int):
-            pairwise_train (Boolean):
-            name (str):
-            save_result (Boolean):
+            X_y_train (pd.DataFrame)
+            X_test (pd.DataFrame)
+            qrels (pd.DataFrame)
+            k (int)
+            components_pca (int)
+            model ()
+            pairwise_model (str)
+            pairwise_top_k (int)
+            pairwise_train (Boolean)
+            name (str)
+            save_result (Boolean)
 
         Returns:
-            best_result (): 
+            MRR (float)
 
-        '''  
+        """
         X, y, X_test, test_pair = split_and_scale(X_y_train, X_test, components_pca=components_pca)
         mrr = self.compute_metrics(model,
                                    X,
@@ -128,8 +128,8 @@ class Evaluation(object):
                                     name: str = None,
                                     save_result: bool = True
                                     ):
-        ''' Performs hyperparameter optimization.
-    
+        """ Performs hyperparameter optimization.
+
         Args:
             model ():
             search_space ():
@@ -138,7 +138,7 @@ class Evaluation(object):
             X_val (pd.DataFrame):
             qrels (pd.DataFrame):
             qrels_val (pd.DataFrame):
-            k (int): 
+            k (int):
             components_pca (int):
             pairwise_model (str):
             pairwise_top_k (int):
@@ -147,17 +147,19 @@ class Evaluation(object):
             save_result (Boolean):
 
         Returns:
-            best_result (): 
+            MRR (float):
 
-        '''
+        """
+
         @use_named_args(search_space)
         def evaluate(**params):
             model.set_params(**params)
-            return -1 * self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca, pairwise_model, pairwise_top_k, pairwise_train, name=name)
+            return -1 * self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca, pairwise_model,
+                                             pairwise_top_k, pairwise_train, name=name)
 
         X, y, X_test, test_pair, X_val, val_pair = split_and_scale(X_y_train, X_test, X_val, components_pca)
         best_result = gp_minimize(evaluate, search_space, n_calls=trials)
-        print(f'Best MRR: {best_result.fun}')
+        print(f'Best MRR: {-1 * best_result.fun}')
         print(f'Best Hyperparameters: {best_result.x}')
 
         best_params_dict = {}
@@ -168,38 +170,35 @@ class Evaluation(object):
 
         return best_result.fun
 
-    def feature_selection(self, model, search_space,
+    def feature_selection(self, model,
                           X_y_train: pd.DataFrame,
                           X_test: pd.DataFrame,
-                          X_val: pd.DataFrame,
                           qrels: pd.DataFrame,
-                          qrels_val: pd.DataFrame,
                           k: int = 50,
                           components_pca: int = 0,
                           save_results: bool = True,
                           name: str = None
                           ):
-        ''' Performs feature selection.
-    
+        """ Performs feature selection.
+
         Args:
             model ():
-            search_space ():
             X_y_train (pd.DataFrame):
             X_test (pd.DataFrame):
-            X_val (pd.DataFrame):
             qrels (pd.DataFrame):
-            qrels_val (pd.DataFrame):
-            k (int): 
+            k (int):
             components_pca (int):
             name (str):
             save_result (Boolean):
 
         Returns:
-            added_columns (list): 
+            Selected Features (list):
 
-        '''
-        features = list(X_y_train.drop(columns=['qID', 'pID', 'y']).columns)
+        """
+        X, y, X_test, test_pair = split_and_scale(X_y_train, X_test, components_pca=components_pca)
+        features = list(X.columns)
         added_columns = []
+        performances = []
 
         current_best = (None, 0)
         current_performance = -1
@@ -208,23 +207,22 @@ class Evaluation(object):
                 if feature in added_columns:
                     continue
                 print(f'Testing features: {added_columns + [feature]}')
-                performance = self.hyperparameter_optimization(model,
-                                                               search_space,
-                                                               X_y_train[
-                                                                   ['qID', 'pID', 'y'] + added_columns + [feature]],
-                                                               X_test[['qID', 'pID'] + added_columns + [feature]],
-                                                               X_val[['qID', 'pID'] + added_columns + [feature]],
-                                                               qrels,
-                                                               qrels_val,
-                                                               k,
-                                                               components_pca,
-                                                               name=name,
-                                                               save_result=save_results)
+                performance = self.compute_metrics(model,
+                                                   X[added_columns + [feature]],
+                                                   y,
+                                                   X_test[added_columns + [feature]],
+                                                   test_pair,
+                                                   qrels,
+                                                   k,
+                                                   components_pca,
+                                                   name=name,
+                                                   save_result=save_results)
                 if performance > current_performance and performance > current_best[1]:
                     current_best = (feature, performance)
             if current_best[0] is not None:
                 current_performance = current_best[1]
                 added_columns.append(current_best[0])
+                performances.append(current_performance)
             else:
                 break
             current_best = (None, 0)
@@ -234,7 +232,7 @@ class Evaluation(object):
         print(f'Best feature combination: {added_columns}')
         print(f'MRR: {current_performance}')
 
-        return added_columns
+        return added_columns, performances
 
     def compute_metrics(self, model,
                         X: pd.DataFrame,
@@ -249,15 +247,16 @@ class Evaluation(object):
                         pairwise_train: bool = True,
                         name: str = None,
                         save_result: bool = False):
-        ''' Computes metrics.
-    
+        """ Computes metrics.
+
         Args:
             model ():
-            x (pd.DataFrame):
-            y ():
-            test_pair ():
+            X (pd.DataFrame):
+            y (pd.Series):
+            X_test (pd.DataFrame):
+            test_pair (pd.DataFrame):
             qrels (pd.DataFrame):
-            k (int): 
+            k (int):
             components_pca (int):
             pairwise_model (str):
             pairwise_top_k (int):
@@ -266,9 +265,9 @@ class Evaluation(object):
             save_result (Boolean):
 
         Returns:
-            mrr (): 
+            MRR (float):
 
-        '''
+        """
         model.fit(X, y)
         confidences = pd.DataFrame(model.predict_proba(X_test))[1]
 
@@ -319,15 +318,15 @@ class Evaluation(object):
         return mrr
 
     def calculate_ranks(self, results: pd.DataFrame):
-        ''' Calculates ranks.
-    
+        """ Calculates ranks.
+
         Args:
             results (pd.DataFrame):
 
         Returns:
-            ranks (pd.DataFrame): 
+            ranks (pd.DataFrame):
 
-        '''
+        """
         ranks = results.sort_values('confidence', ascending=False)
         ranks['rank'] = np.arange(1, len(ranks) + 1)
         ranks = ranks[ranks['relevant'] >= 1]
@@ -335,15 +334,15 @@ class Evaluation(object):
         return ranks
 
     def average_precision_score(self, results: pd.DataFrame):
-        ''' Calculates average precision score.
-    
+        """ Calculates average precision score.
+
         Args:
             results (pd.DataFrame):
 
         Returns:
-            sum / len(ranks) (float): 
+            AP (float):
 
-        '''
+        """
         ranks = self.calculate_ranks(results)
         sum = 0
         for index, data in ranks.iterrows():
@@ -351,15 +350,15 @@ class Evaluation(object):
         return sum / len(ranks)
 
     def mean_average_precision_score(self, results: pd.DataFrame):
-        ''' Calculates mean average precision score.
-    
+        """ Calculates mean average precision score.
+
         Args:
             results (pd.DataFrame):
 
         Returns:
-            sum / len(qIDs) (float): 
+            MAP (float):
 
-        '''        
+        """
         qIDs = results['qID'].unique()
         sum = 0
         for qID in qIDs:
@@ -367,11 +366,11 @@ class Evaluation(object):
         return sum / len(qIDs)
 
     def metrics(self, results: pd.DataFrame, k: int = None):
-        ''' Calculates metrics (accuracy, precision, recall, f1).
-    
+        """ Calculates metrics (accuracy, precision, recall, f1).
+
         Args:
             results (pd.DataFrame):
-            k (int): 
+            k (int):
 
         Returns:
             accuracy (float): Returns accuracy score of model
@@ -379,7 +378,7 @@ class Evaluation(object):
             recall (float): Returns recall score of model
             f_score (float): Returns f_score score of model
 
-        ''' 
+        """
         if k is not None:
             results = results.sort_values('confidence', ascending=False).groupby('qID').head(k)
 
@@ -404,15 +403,15 @@ class Evaluation(object):
         return accuracy, precision, recall, f_score
 
     def normalized_discounted_cumulative_gain(self, results: pd.DataFrame):
-        ''' Calculates normalized discounted cumulative gain.
-    
+        """ Calculates normalized discounted cumulative gain.
+
         Args:
             results (pd.DataFrame):
 
         Returns:
-            dcg / idcg (float):
+            nDCG (float):
 
-        ''' 
+        """
         ranks = self.calculate_ranks(results)
         dcg = 0
         idcg = 0
@@ -422,15 +421,15 @@ class Evaluation(object):
         return dcg / idcg
 
     def mean_normalized_discounted_cumulative_gain_score(self, results: pd.DataFrame):
-        ''' Calculates mean normalized discounted cumulative gain score.
-    
+        """ Calculates mean normalized discounted cumulative gain score.
+
         Args:
             results (pd.DataFrame):
 
         Returns:
-            sum / len(qIDs):
+            Mean of nDCG (float):
 
-        ''' 
+        """
         qIDs = results['qID'].unique()
         sum = 0
         for qID in qIDs:
@@ -438,15 +437,15 @@ class Evaluation(object):
         return sum / len(qIDs)
 
     def mean_reciprocal_rank(self, results: pd.DataFrame):
-        ''' Calculates mean reciprocal rank.
-    
+        """ Calculates mean reciprocal rank.
+
         Args:
             results (pd.DataFrame):
 
         Returns:
-            sum / len(qIDs):
+            MRR (float):
 
-        ''' 
+        """
         qIDs = results['qID'].unique()
         sum = 0
 

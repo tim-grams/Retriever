@@ -1,2 +1,0 @@
-*features_test.pkl filter=lfs diff=lfs merge=lfs -text
-*features_val.pkl filter=lfs diff=lfs merge=lfs -text

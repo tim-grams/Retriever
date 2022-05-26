@@ -7,35 +7,35 @@ import os
 
 
 class TFIDF(object):
-    ''' A class to create tfidf embeddings.
+    """ A class to create tfidf embeddings.
 
     Attributes:
-        path (str): 
+        path (str):
 
     Methods:
     fit(text_in_tokens: pd.Series, store: str = "models/tfidf.pkl"):
         Fits the tfidf model to the data
     transform(text_in_tokens: pd.Series, store: str = None):
         Transforms series of preprocessed tokens to tfidf embeddings
-        
-    '''
+
+    """
 
     vectorizer = None
     fitted = False
 
     def __init__(self, path: str = None):
-        ''' Constructs tfidf object. 
-        
-        Args: 
+        """ Constructs tfidf object.
+
+        Args:
             path (str): Path of model
 
-        '''
+        """
         if path is not None:
             self.vectorizer = load(path)
 
     def fit(self, text_in_tokens: pd.Series, store: str = "models/tfidf.pkl"):
-        ''' Fits the tfidf model to the data.
-    
+        """ Fits the tfidf model to the data.
+
         Args:
             text_in_tokens (pd.Series): Series of preprocessed tokens
             store (str): Path to store model to
@@ -43,7 +43,7 @@ class TFIDF(object):
         Returns:
             none
 
-        '''     
+        """
         def dummy(text):
             return text
 
@@ -59,8 +59,8 @@ class TFIDF(object):
         return self
 
     def transform(self, text_in_tokens: pd.Series, store: str = None):
-        ''' Transform series of preprocessed tokens to tfidf embeddings.
-    
+        """ Transform series of preprocessed tokens to tfidf embeddings.
+
         Args:
             text_in_tokens (pd.Series): Series of preprocessed tokens
             store (str): Path to tfidf embeddings to
@@ -68,7 +68,7 @@ class TFIDF(object):
         Returns:
             tf_idf_vec (np.array): Array containing tfidf embeddings
 
-        '''
+        """
         assert self.vectorizer is not None, 'You need to fit me first'
 
         tfidf_matrix = self.vectorizer.transform(text_in_tokens)

@@ -18,8 +18,9 @@ tqdm.pandas()
 LOGGER = logging.getLogger('generator')
 
 
-def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame, tfidf=None, glove=None, bert=None, w2v=None):
-    ''' Creates all implemented embeddings (bert, glove, tfidf, word2vec) 
+def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame, tfidf=None, glove=None,
+               bert=None, w2v=None):
+    """ Creates all implemented embeddings (bert, glove, tfidf, word2vec)
         and features (cosine, euclidean, manhattan, jaccard, sentence, interpretation, BM25, POS).
 
     Args:
@@ -33,8 +34,8 @@ def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.Dat
 
     Returns:
         features (pd.DataFrame): Dataframe containing feature data
-        
-    ''' 
+
+    """
     tfidf, _ = create_tfidf_embeddings(collection, tfidf=tfidf, name='collection')
     create_tfidf_embeddings(queries, tfidf=tfidf, name='query')
     glove, _ = create_glove_embeddings(collection, glove=glove, name='collection')
@@ -43,8 +44,8 @@ def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.Dat
     create_bert_embeddings(queries, bert=bert, name='query')
     w2v, _ = create_w2v_embeddings(collection, w2v=w2v, name='collection')
     create_w2v_embeddings(queries, w2v=w2v, name='query')
-    create_w2v_embeddings_tf_idf_weighted(collection, w2v=w2v, name = "collection")
-    create_w2v_embeddings_tf_idf_weighted(queries, w2v=w2v, name = "query")
+    create_w2v_embeddings_tf_idf_weighted(collection, w2v=w2v, name="collection")
+    create_w2v_embeddings_tf_idf_weighted(queries, w2v=w2v, name="query")
     features = create_w2v_feature(features, collection, queries)
     features = create_w2v_tfidf_feature(features, collection, queries)
     features = create_tfidf_feature(features, collection, queries)
@@ -58,7 +59,7 @@ def create_all(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.Dat
 
 
 def create_tfidf_embeddings(data: pd.DataFrame, tfidf=None, name: str = ''):
-    ''' Creates tfidf embeddings
+    """ Creates tfidf embeddings
 
     Args:
         data (pd.DataFrame): Dataframe containing data to be embedded
@@ -67,9 +68,9 @@ def create_tfidf_embeddings(data: pd.DataFrame, tfidf=None, name: str = ''):
 
     Returns:
         tfidf (TFIDF object): Object of class TFIDF
-        data (pd.DataFrame): Dataframe data with new column "preprocessed" appended 
-        
-    ''' 
+        data (pd.DataFrame): Dataframe data with new column "preprocessed" appended
+
+    """
     if tfidf is None:
         tfidf = TFIDF()
         tfidf.fit(
@@ -83,7 +84,7 @@ def create_tfidf_embeddings(data: pd.DataFrame, tfidf=None, name: str = ''):
 
 
 def create_glove_embeddings(data: pd.DataFrame, glove=None, name: str = ''):
-    ''' Creates glove embeddings
+    """ Creates glove embeddings
 
     Args:
         data (pd.DataFrame): Dataframe containing data to be embedded
@@ -92,9 +93,9 @@ def create_glove_embeddings(data: pd.DataFrame, glove=None, name: str = ''):
 
     Returns:
         glove (Glove object): Object of class Glove
-        data (pd.DataFrame): Dataframe data with new column "preprocessed" appended 
-        
-    ''' 
+        data (pd.DataFrame): Dataframe data with new column "preprocessed" appended
+
+    """
     if glove is None:
         glove = Glove()
 
@@ -104,8 +105,9 @@ def create_glove_embeddings(data: pd.DataFrame, glove=None, name: str = ''):
 
     return glove, data
 
+
 def create_glove_embeddings_tf_idf_weighted(data: pd.DataFrame, glove=None, name: str = ''):
-    ''' Creates tfidf weighted glove embeddings
+    """ Creates tfidf weighted glove embeddings
 
     Args:
         data (pd.DataFrame): Dataframe containing data to be embedded
@@ -114,9 +116,9 @@ def create_glove_embeddings_tf_idf_weighted(data: pd.DataFrame, glove=None, name
 
     Returns:
         glove (Glove object): Object of class Glove
-        data (pd.DataFrame): Dataframe data with new column "glove_tfidf" appended 
-        
-    ''' 
+        data (pd.DataFrame): Dataframe data with new column "glove_tfidf" appended
+
+    """
     if glove is None:
         glove = Glove()
 
@@ -124,11 +126,11 @@ def create_glove_embeddings_tf_idf_weighted(data: pd.DataFrame, glove=None, name
         data['preprocessed'], data['tfidf'],
         f"data/embeddings/glove_tf_idf_{name}_embeddings.pkl")
 
-    return glove, data   
+    return glove, data
 
 
 def create_bert_embeddings(data: pd.DataFrame, bert=None, name: str = ''):
-    ''' Creates bert embeddings
+    """ Creates bert embeddings
 
     Args:
         data (pd.DataFrame): Dataframe containing data to be embedded
@@ -137,9 +139,9 @@ def create_bert_embeddings(data: pd.DataFrame, bert=None, name: str = ''):
 
     Returns:
         bert (Bert object): Object of class Bert
-        data (pd.DataFrame): Dataframe data with new column "preprocessed" appended 
-        
-    ''' 
+        data (pd.DataFrame): Dataframe data with new column "preprocessed" appended
+
+    """
     if bert is None:
         bert = Bert()
 
@@ -157,7 +159,7 @@ def create_bert_embeddings(data: pd.DataFrame, bert=None, name: str = ''):
 
 
 def create_w2v_embeddings(data: pd.DataFrame, w2v=None, name: str = ''):
-    ''' Creates word2vec embeddings
+    """ Creates word2vec embeddings
 
     Args:
         data (pd.DataFrame): Dataframe containing data to be embedded
@@ -166,9 +168,9 @@ def create_w2v_embeddings(data: pd.DataFrame, w2v=None, name: str = ''):
 
     Returns:
         w2v (word2vec object): Object of class word2vec
-        data (pd.DataFrame): Dataframe data with new column "preprocessed" appended 
-        
-    ''' 
+        data (pd.DataFrame): Dataframe data with new column "preprocessed" appended
+
+    """
     if w2v is None:
         w2v = word2vec()
 
@@ -177,8 +179,9 @@ def create_w2v_embeddings(data: pd.DataFrame, w2v=None, name: str = ''):
 
     return w2v, data
 
+
 def create_w2v_embeddings_tf_idf_weighted(data: pd.DataFrame, w2v=None, name: str = ''):
-    ''' Creates weighted tfidf word2vec embeddings
+    """ Creates weighted tfidf word2vec embeddings
 
     Args:
         data (pd.DataFrame): Dataframe containing data to be embedded
@@ -187,21 +190,22 @@ def create_w2v_embeddings_tf_idf_weighted(data: pd.DataFrame, w2v=None, name: st
 
     Returns:
         w2v (word2vec object): Object of class word2vec
-        data (pd.DataFrame): Dataframe data with new column "w2v_tfidf" appended 
-        
-    ''' 
+        data (pd.DataFrame): Dataframe data with new column "w2v_tfidf" appended
+
+    """
     if w2v is None:
         w2v = word2vec()
 
-    data['w2v_tfidf'] = w2v.transform_tf_idf_weighted(data['preprocessed'], data['tfidf'], 
-                                f"data/embeddings/w2v_tfidf_{name}_embeddings.pkl")
+    data['w2v_tfidf'] = w2v.transform_tf_idf_weighted(data['preprocessed'], data['tfidf'],
+                                                      f"data/embeddings/w2v_tfidf_{name}_embeddings.pkl")
 
     return w2v, data
+
 
 def create_w2v_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
                        path_collection: str = 'data/embeddings/w2v_collection_embeddings.pkl',
                        path_query: str = 'data/embeddings/w2v_query_embeddings.pkl'):
-    ''' Creates word2vec features (cosine, euclidean, manhattan)
+    """ Creates word2vec features (cosine, euclidean, manhattan)
 
     Args:
         features (pd.DataFrame): Dataframe containing feature data
@@ -212,9 +216,9 @@ def create_w2v_feature(features: pd.DataFrame, collection: pd.DataFrame, queries
 
 
     Returns:
-        features (pd.DataFrame): Dataframe "features" with new columns "w2v_cosine", "w2v_euclidean", "w2v_manhattan" appended 
-        
-    ''' 
+        features (pd.DataFrame): Dataframe "features" with new columns "w2v_cosine", "w2v_euclidean", "w2v_manhattan" appended
+
+    """
     embeddings = np.array(load(path_collection))
     embeddings_queries = np.array(load(path_query))
 
@@ -250,10 +254,11 @@ def create_w2v_feature(features: pd.DataFrame, collection: pd.DataFrame, queries
 
     return features
 
+
 def create_w2v_tfidf_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
-                       path_collection: str = 'data/embeddings/w2v_tfidf_collection_embeddings.pkl',
-                       path_query: str = 'data/embeddings/w2v_tfidf_query_embeddings.pkl'):
-    ''' Creates tfidf weighted word2vec features (cosine, euclidean, manhattan)
+                             path_collection: str = 'data/embeddings/w2v_tfidf_collection_embeddings.pkl',
+                             path_query: str = 'data/embeddings/w2v_tfidf_query_embeddings.pkl'):
+    """ Creates tfidf weighted word2vec features (cosine, euclidean, manhattan)
 
     Args:
         features (pd.DataFrame): Dataframe containing feature data
@@ -264,48 +269,49 @@ def create_w2v_tfidf_feature(features: pd.DataFrame, collection: pd.DataFrame, q
 
 
     Returns:
-        features (pd.DataFrame): Dataframe "features" with new columns "w2v_tfidf_cosine", "w2v_tfidf_euclidean", "w2v_tfidf_manhattan" appended 
-        
-    ''' 
+        features (pd.DataFrame): Dataframe "features" with new columns "w2v_tfidf_cosine", "w2v_tfidf_euclidean", "w2v_tfidf_manhattan" appended
+
+    """
     embeddings = np.array(load(path_collection))
     embeddings_queries = np.array(load(path_query))
 
     features['w2v_tfidf_cosine'] = features.progress_apply(lambda qrel:
-                                                     cosine_similarity_score(embeddings_queries[
-                                                                                 queries[
-                                                                                     queries[
-                                                                                         'qID'] == qrel.qID].index],
-                                                                             embeddings[collection[
-                                                                                 collection[
-                                                                                     'pID'] == qrel.pID].index]),
-                                                     axis=1)
+                                                           cosine_similarity_score(embeddings_queries[
+                                                                                       queries[
+                                                                                           queries[
+                                                                                               'qID'] == qrel.qID].index],
+                                                                                   embeddings[collection[
+                                                                                       collection[
+                                                                                           'pID'] == qrel.pID].index]),
+                                                           axis=1)
     features['w2v_tfidf_euclidean'] = features.progress_apply(lambda qrel:
-                                                        euclidean_distance_score(embeddings_queries[
-                                                                                     queries[
-                                                                                         queries[
-                                                                                             'qID'] == qrel.qID].index],
-                                                                                 embeddings[
-                                                                                     collection[
-                                                                                         collection[
-                                                                                             'pID'] == qrel.pID].index]),
-                                                        axis=1)
+                                                              euclidean_distance_score(embeddings_queries[
+                                                                                           queries[
+                                                                                               queries[
+                                                                                                   'qID'] == qrel.qID].index],
+                                                                                       embeddings[
+                                                                                           collection[
+                                                                                               collection[
+                                                                                                   'pID'] == qrel.pID].index]),
+                                                              axis=1)
     features['w2v_tfidf_manhattan'] = features.progress_apply(lambda qrel:
-                                                        manhattan_distance_score(embeddings_queries[
-                                                                                     queries[
-                                                                                         queries[
-                                                                                             'qID'] == qrel.qID].index],
-                                                                                 embeddings[
-                                                                                     collection[
-                                                                                         collection[
-                                                                                             'pID'] == qrel.pID].index]),
-                                                        axis=1)
+                                                              manhattan_distance_score(embeddings_queries[
+                                                                                           queries[
+                                                                                               queries[
+                                                                                                   'qID'] == qrel.qID].index],
+                                                                                       embeddings[
+                                                                                           collection[
+                                                                                               collection[
+                                                                                                   'pID'] == qrel.pID].index]),
+                                                              axis=1)
 
     return features
+
 
 def create_tfidf_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
                          path_collection: str = 'data/embeddings/tfidf_collection_embeddings.pkl',
                          path_query: str = 'data/embeddings/tfidf_query_embeddings.pkl'):
-    ''' Creates tfidf features (cosine, euclidean, manhattan)
+    """ Creates tfidf features (cosine, euclidean, manhattan)
 
     Args:
         features (pd.DataFrame): Dataframe containing feature data
@@ -316,9 +322,9 @@ def create_tfidf_feature(features: pd.DataFrame, collection: pd.DataFrame, queri
 
 
     Returns:
-        features (pd.DataFrame): Dataframe "features" with new columns "tfidf_cosine", "tfidf_euclidean", "tfidf_manhattan" appended 
-        
-    ''' 
+        features (pd.DataFrame): Dataframe "features" with new columns "tfidf_cosine", "tfidf_euclidean", "tfidf_manhattan" appended
+
+    """
     embeddings = load(path_collection)
     embeddings_queries = load(path_query)
 
@@ -358,7 +364,7 @@ def create_tfidf_feature(features: pd.DataFrame, collection: pd.DataFrame, queri
 def create_glove_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
                          path_collection: str = 'data/embeddings/glove_collection_embeddings.pkl',
                          path_query: str = 'data/embeddings/glove_query_embeddings.pkl'):
-    ''' Creates glove features (cosine, euclidean, manhattan)
+    """ Creates glove features (cosine, euclidean, manhattan)
 
     Args:
         features (pd.DataFrame): Dataframe containing feature data
@@ -369,9 +375,9 @@ def create_glove_feature(features: pd.DataFrame, collection: pd.DataFrame, queri
 
 
     Returns:
-        features (pd.DataFrame): Dataframe "features" with new columns "glove_cosine", "glove_euclidean", "glove_manhattan" appended 
-        
-    ''' 
+        features (pd.DataFrame): Dataframe "features" with new columns "glove_cosine", "glove_euclidean", "glove_manhattan" appended
+
+    """
     embeddings = np.array(load(path_collection))
     embeddings_queries = np.array(load(path_query))
 
@@ -412,7 +418,7 @@ def create_glove_feature(features: pd.DataFrame, collection: pd.DataFrame, queri
 def create_bert_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame,
                         path_collection: str = 'data/embeddings/bert_collection_embeddings.pkl',
                         path_query: str = 'data/embeddings/bert_query_embeddings.pkl'):
-    ''' Creates bert features (cosine, euclidean, manhattan)
+    """ Creates bert features (cosine, euclidean, manhattan)
 
     Args:
         features (pd.DataFrame): Dataframe containing feature data
@@ -423,9 +429,9 @@ def create_bert_feature(features: pd.DataFrame, collection: pd.DataFrame, querie
 
 
     Returns:
-        features (pd.DataFrame): Dataframe "features" with new columns "bert_cosine", "bert_euclidean", "bert_manhattan" appended 
-        
-    ''' 
+        features (pd.DataFrame): Dataframe "features" with new columns "bert_cosine", "bert_euclidean", "bert_manhattan" appended
+
+    """
     embeddings = np.array(load(path_collection))
 
     embeddings_queries = np.array(load(path_query))
@@ -465,7 +471,7 @@ def create_bert_feature(features: pd.DataFrame, collection: pd.DataFrame, querie
 
 
 def create_jaccard_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame):
-    ''' Creates jaccard features for query-collection combinations
+    """ Creates jaccard features for query-collection combinations
 
     Args:
         features (pd.DataFrame): Dataframe containing feature data
@@ -473,9 +479,9 @@ def create_jaccard_feature(features: pd.DataFrame, collection: pd.DataFrame, que
         queries (pd.DataFrame): Dataframe containing queries data
 
     Returns:
-        features (pd.DataFrame): Dataframe "features" with new column "jaccard" appended 
-        
-    ''' 
+        features (pd.DataFrame): Dataframe "features" with new column "jaccard" appended
+
+    """
     features['jaccard'] = features.progress_apply(
         lambda qrel: jaccard(collection[collection['pID'] == qrel['pID']]['preprocessed'].iloc[0],
                              queries[queries['qID'] == qrel['qID']]['preprocessed'].iloc[0]),
@@ -485,7 +491,7 @@ def create_jaccard_feature(features: pd.DataFrame, collection: pd.DataFrame, que
 
 
 def create_sentence_features(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame):
-    ''' Creates sentence features for query-collection combinations (words_difference, words_rel_difference, char_difference, char_rel_difference)
+    """ Creates sentence features for query-collection combinations (words_difference, words_rel_difference, char_difference, char_rel_difference)
 
     Args:
         features (pd.DataFrame): Dataframe containing feature data
@@ -494,9 +500,9 @@ def create_sentence_features(features: pd.DataFrame, collection: pd.DataFrame, q
 
     Returns:
         features (pd.DataFrame): Dataframe "features" with new columns "words_doc", "words_query", "words_difference", "words_rel_difference"
-        "char_doc", "char_query", "char_difference", "char_rel_difference" appended 
-        
-    ''' 
+        "char_doc", "char_query", "char_difference", "char_rel_difference" appended
+
+    """
     features['words_doc'] = features.progress_apply(
         lambda qrel: words(collection[collection['pID'] == qrel['pID']]['Passage'].iloc[0]),
         axis=1)
@@ -527,7 +533,7 @@ def create_sentence_features(features: pd.DataFrame, collection: pd.DataFrame, q
 
 
 def create_interpretation_features(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame):
-    ''' Creates interpretation features for query and collection data (subjectivity, polarity)
+    """ Creates interpretation features for query and collection data (subjectivity, polarity)
 
     Args:
         features (pd.DataFrame): Dataframe containing feature data
@@ -535,9 +541,9 @@ def create_interpretation_features(features: pd.DataFrame, collection: pd.DataFr
         queries (pd.DataFrame): Dataframe containing queries data
 
     Returns:
-        features (pd.DataFrame): Dataframe "features" with new columns "subjectivity_doc", "polarity_doc", "subjectivity_query", "polarity_query" appended 
-        
-    ''' 
+        features (pd.DataFrame): Dataframe "features" with new columns "subjectivity_doc", "polarity_doc", "subjectivity_query", "polarity_query" appended
+
+    """
     features['subjectivity_doc'] = features.progress_apply(
         lambda qrel: subjectivity(collection[collection['pID'] == qrel['pID']]['Passage'].iloc[0]),
         axis=1)
@@ -556,7 +562,7 @@ def create_interpretation_features(features: pd.DataFrame, collection: pd.DataFr
 
 
 def create_POS_features(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame):
-    ''' Creates Part of Speech features for query and collection data (nouns, adjectives, verbs)
+    """ Creates Part of Speech features for query and collection data (nouns, adjectives, verbs)
 
     Args:
         features (pd.DataFrame): Dataframe containing feature data
@@ -565,9 +571,9 @@ def create_POS_features(features: pd.DataFrame, collection: pd.DataFrame, querie
 
     Returns:
         features (pd.DataFrame): Dataframe "features" with new columns "doc_nouns", "doc_adjectives", "doc_verbs", "query_nouns",
-        "query_adjectives", "query_verbs" appended 
-        
-    ''' 
+        "query_adjectives", "query_verbs" appended
+
+    """
     pos = features.progress_apply(
         lambda qrel: POS(collection[collection['pID'] == qrel['pID']]['Passage'].iloc[0]),
         axis=1)
@@ -586,7 +592,7 @@ def create_POS_features(features: pd.DataFrame, collection: pd.DataFrame, querie
 
 
 def create_BM2_feature(features: pd.DataFrame, collection: pd.DataFrame, queries: pd.DataFrame):
-    ''' Creates BM25 features for query-collection combinations
+    """ Creates BM25 features for query-collection combinations
 
     Args:
         features (pd.DataFrame): Dataframe containing feature data
@@ -594,9 +600,9 @@ def create_BM2_feature(features: pd.DataFrame, collection: pd.DataFrame, queries
         queries (pd.DataFrame): Dataframe containing queries data
 
     Returns:
-        features (pd.DataFrame): Dataframe "features" with new column "bm25" appended 
-        
-    ''' 
+        features (pd.DataFrame): Dataframe "features" with new column "bm25" appended
+
+    """
     bm25 = BM25().fit(collection['preprocessed'])
     features['bm25'] = features.progress_apply(
         lambda qrel: bm25.predict_proba(queries[queries['qID'] == qrel['qID']]['preprocessed'].iloc[0],

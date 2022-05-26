@@ -2,26 +2,24 @@ import torch.nn as nn
 
 
 class RankNet(nn.Module):
-    ''' A class to create pair wise RankNet models.
+    """ A class to create pair wise RankNet models.
 
     Attributes:
-        num_features (): 
+        num_features ():
 
     Methods:
-    forward(input1, input2)
-        INSERT_DESCRIPTION
-    predict_proba(input_):
-        INSERT_DESCRIPTION
-        
-    '''
+        forward(input1, input2)
+        predict_proba(input_)
+
+    """
 
     def __init__(self, num_features):
-        ''' Constructs RankNet object. 
-        
-        Args: 
+        """ Constructs RankNet object.
+
+        Args:
             num_features ():
 
-        '''
+        """
         super(RankNet, self).__init__()
 
         self.model = nn.Sequential(
@@ -39,16 +37,16 @@ class RankNet(nn.Module):
         self.output = nn.Sigmoid()
 
     def forward(self, input1, input2):
-        ''' . 
-        
-        Args: 
-            input1 ():
-            input2 ():
+        """ .
+
+        Args:
+            input1 (): Document 1 features
+            input2 (): Document 2 features
 
         Returns:
-            prob ():
+            prob (): pairwise ranking
 
-        '''
+        """
         s1 = self.model(input1)
         s2 = self.model(input2)
         diff = s1 - s2
@@ -57,13 +55,13 @@ class RankNet(nn.Module):
         return prob
 
     def predict_proba(self, input_):
-        ''' . 
-        
-        Args: 
+        """ .
+
+        Args:
             input_ ():
 
         Returns:
-            ():
+            confidence (): pairwise ranking score
 
-        '''
+        """
         return self.model(input_)
