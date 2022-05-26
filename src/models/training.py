@@ -451,7 +451,7 @@ class Evaluation(object):
 
         for qID in qIDs:
             ranks = self.calculate_ranks(results[results['qID'] == qID])
-            ranks = ranks.sort_values('rank', ascending=False).iloc[0]
+            ranks = ranks.sort_values('rank', ascending=True).head(1)
             sum += (1 / ranks['rank'])
 
         return sum / len(qIDs)
