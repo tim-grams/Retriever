@@ -18,6 +18,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
+from sklearn.dummy import DummyClassifier
 from src.models.ranknet import RankNet
 import torch
 from src.utils.utils import check_path_exists
@@ -427,7 +428,9 @@ class Pipeline(object):
 
         """
         evaluation = Evaluation()
-        if model == 'nbg':
+        if model == 'baseline':
+            model_to_test = DummyClassifier(strategy='uniform')
+        elif model == 'nbg':
             model_to_test = GaussianNB()
         elif model == 'nbn':
             model_to_test = MultinomialNB()
@@ -453,8 +456,10 @@ class Pipeline(object):
             pairwise_model.eval()
             pairwise_train = False
         else:
-            if pairwise_model == 'ranknet':
+            if pairwise_model == 'ranknet' and pca < 1:
                 pairwise_model = RankNet(len(self.features.columns) - 3)
+            elif pairwise_model == 'ranknet' and pca >= 1:
+                pairwise_model = RankNet(pca)
             else:
                 pairwise_model = None
             pairwise_train = True
@@ -488,9 +493,11 @@ class Pipeline(object):
         if model == 'nb':
             model_to_test = GaussianNB()
         elif model == 'lr':
-            model_to_test = LogisticRegression()
+            model_to_test = LogisticRegression(random_state=42)
+        elif model == 'ada':
+            model_to_test = AdaBoostClassifier(random_state=42)
         else:
-            model_to_test = MLPClassifier()
+            model_to_test = MLPClassifier(random_state=42)
 
         return evaluation.feature_selection(model_to_test, self.features,
                                             self.features_test,

@@ -144,6 +144,7 @@ class Evaluation(object):
             pairwise_model (str):
             pairwise_top_k (int):
             pairwise_train (Boolean):
+            trials (int):
             name (str):
             save_result (Boolean):
 

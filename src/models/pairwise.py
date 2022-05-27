@@ -27,7 +27,7 @@ def create_dataloader(X, y, batch_size: int = 50) -> DataLoader:
     return DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 
-def train_pairwise(network, X, y, num_epochs: int = 20):
+def train_pairwise(network, X, y, num_epochs: int = 10):
     """ .
 
     Args:
