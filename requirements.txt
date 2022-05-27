@@ -10,3 +10,5 @@ sentence_transformers
 flair==0.11.1
 scikit-optimize
 seaborn
+dill
+sacremoses

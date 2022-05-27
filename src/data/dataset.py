@@ -12,16 +12,16 @@ LOGGER = logging.getLogger('cli')
 
 
 def download_dataset(datasets: list = None, path: str = "data/TREC_Passage"):
-    assert datasets is not None, "No dataset selected"
-    ''' Combines and executes download and unzip methods
-    
+    """ Combines and executes download and unzip methods
+
     Args:
         datasets (list): List of required files
         path (str): Location to store downloaded data.
 
     Returns:
         none
-    '''
+    """
+    assert datasets is not None, "No dataset selected"
 
     links = {
         'collection.tsv': "https://msmarco.blob.core.windows.net/msmarcoranking/collection.tar.gz",
@@ -61,8 +61,8 @@ def download_dataset(datasets: list = None, path: str = "data/TREC_Passage"):
 
 
 def download(remote_url: str = None, path: str = None):
-    ''' Downloads files
-    
+    """ Downloads files
+
     Args:
         remote_url (str): URL to dataset
         path (str): Location to store downloaded data.
@@ -70,7 +70,7 @@ def download(remote_url: str = None, path: str = None):
     Returns:
         none
 
-    '''
+    """
     assert remote_url is not None, "No URL given"
     assert path is not None, "Specify local path"
 
@@ -96,15 +96,15 @@ def download(remote_url: str = None, path: str = None):
 
 
 def unzip(file: str = None):
-    ''' Unzips files
-    
+    """ Unzips files
+
     Args:
         file (str): Specify file to unzip
-        
+
     Returns:
         none
 
-    '''
+    """
     assert file is not None, "No file specified"
 
     if file.endswith(".tar.gz"):
@@ -126,18 +126,18 @@ def unzip(file: str = None):
 
 
 def import_val_test_queries(path: str = "data/TREC_Passage", qrels_val: list = None, qrels_test: list = None):
-    ''' Imports validation and test queries
-    
+    """ Imports validation and test queries
+
     Args:
         path (str): Location of dataset
-        qrels_val (list): 
-        qrels_test (list): 
+        qrels_val (list):
+        qrels_test (list):
 
     Returns:
-        val_df (pd.DataFrame): Query validation IDs and content 
+        val_df (pd.DataFrame): Query validation IDs and content
         test_df (pd.DataFrame): Query test IDs and content
 
-    '''
+    """
     filepath = os.path.join(path, 'msmarco-test2019-queries.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -161,17 +161,16 @@ def import_val_test_queries(path: str = "data/TREC_Passage", qrels_val: list = N
 
 
 def import_queries(path: str = "data/TREC_Passage", collection: list = None):
-    ''' Imports train queries
-    
+    """ Imports train queries
+
     Args:
         path (str): Location of dataset
-        collection (list): 
-        qrels_test (list): 
+        collection (list)
 
     Returns:
-        df (pd.DataFrame): Query train IDs and content 
+        df (pd.DataFrame): Query train IDs and content
 
-    '''
+    """
     filepath = os.path.join(path, 'queries.train.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -186,18 +185,18 @@ def import_queries(path: str = "data/TREC_Passage", collection: list = None):
 
 
 def import_collection(path: str = "data/TREC_Passage", qrels_val: list = None, qrels_test: list = None, triples: list = None, samples: int = 0):
-    ''' Imports data from collection.tsv file
-    
+    """ Imports data from collection.tsv file
+
     Args:
         path (str): Location of dataset
         qrels_val (list):
-        triples (list): 
+        triples (list):
         samples (int): Specify number of rows to be imported from dataset
 
     Returns:
         df (pd.DataFrame): Data frame containing IDs and Passages from collection dataset
 
-    '''
+    """
     filepath = os.path.join(path, 'collection.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -215,17 +214,17 @@ def import_collection(path: str = "data/TREC_Passage", qrels_val: list = None, q
 
 
 def import_qrels(path: str = "data/TREC_Passage", samples: int = 5):
-    ''' Imports data from 2019qrels-pass.txt as validation set and from 2020qrels-pass.txt as test set
-    
+    """ Imports data from 2019qrels-pass.txt as validation set and from 2020qrels-pass.txt as test set
+
     Args:
         path (str): Location of dataset
-        samples (int): Specify number of rows to be imported from dataset        
-        
+        samples (int): Specify number of rows to be imported from dataset
+
     Returns:
         df_val (pd.DataFrame): Data frame containing validation set
-        df_test (pd.DataFrame): Data frame containing test set 
+        df_test (pd.DataFrame): Data frame containing test set
 
-    '''
+    """
     filepath = os.path.join(path, '2019qrels-pass.txt')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")
@@ -251,16 +250,16 @@ def import_qrels(path: str = "data/TREC_Passage", samples: int = 5):
 
 
 def import_training_set(path: str = "data/TREC_Passage", samples: int = 200):
-    ''' Imports data from qidpidtriples.train.full.2.tsv as training set
-    
+    """ Imports data from qidpidtriples.train.full.2.tsv as training set
+
     Args:
         path (str): Location of dataset
-        samples (int): Specify number of rows to be imported from dataset          
-        
+        samples (int): Specify number of rows to be imported from dataset
+
     Returns:
         df (pd.DataFrame): Data frame containing training set
 
-    '''    
+    """
     filepath = os.path.join(path, 'qidpidtriples.train.full.2.tsv')
     if not os.path.exists(filepath):
         LOGGER.debug("File not there, downloading a new one")

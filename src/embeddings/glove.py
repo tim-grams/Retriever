@@ -1,7 +1,7 @@
 from flair.embeddings import WordEmbeddings
 from flair.data import Sentence
 import pandas as pd
-from src.utils.utils import check_path_exists, save, load
+from src.utils.utils import check_path_exists, save
 import os
 from tqdm import tqdm
 import torch
@@ -9,20 +9,20 @@ from nltk.tokenize.treebank import TreebankWordDetokenizer
 
 
 class Glove(object):
-    ''' A class to create glove embeddings.
+    """ A class to create glove embeddings.
 
     Methods:
     transform(text_in_tokens: pd.Series, store: str = None)
         Transform series of preprocessed tokens to glove embeddings
-    '''
+    """
     glove = None
 
     def __init__(self):
-        ''' Constructs glove object using a pretrained model. ''' 
+        """ Constructs glove object using a pretrained model. """
         self.glove = WordEmbeddings('glove')
 
     def transform(self, text_in_tokens: pd.Series, store: str = None):
-        ''' Transform series of preprocessed tokens to glove embeddings.
+        """ Transform series of preprocessed tokens to glove embeddings.
     
         Args:
             text_in_tokens (pd.Series): Series of preprocessed tokens
@@ -30,7 +30,7 @@ class Glove(object):
         Returns:
             glove_vec (list): List containing glove embeddings
 
-        '''      
+        """
         glove_vec = []
 
         for line in tqdm(text_in_tokens):
