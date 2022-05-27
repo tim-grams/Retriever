@@ -40,54 +40,6 @@ class Pipeline(object):
         qrels_test (str): Imports qrels_test data from .pkl file if not None
         features_test (pd.DataFrame): Imports features_test data from .pkl file if not None
         features_val (pd.DataFrame): Imports features_val data from .pkl file if not None
-
-
-    Methods:
-    setup(qrel_sampling: int = 20, training_sampling: int = 200, irrelevant_sampling: int = 0,
-              datasets: list = None, path: str = 'data/TREC_Passage'):
-        Calls import methods from datasets.py for specified datasets
-    preprocess(expansion=False):
-        Calls preprocess method from preprocess.py
-    create_tfidf_embeddings():
-        Calls create_tfidf_embeddings method from generator.py
-    create_w2v_embeddings():
-        Calls create_w2v_embeddings method from generator.py
-    create_w2v_embeddings_tfidf_weighted():
-        Calls create_w2v_embeddings_tfidf_weighted method from generator.py
-    path_query: str = 'data/embeddings/w2v_query_embeddings.pkl'):
-        Calls create_w2v_feature method from generator.py
-    create_bert_embeddings():
-        Calls create_bert_embeddings method from generator.py
-    create_glove_embeddings():
-        Calls create_glove_embeddings method from generator.py
-    create_glove_embeddings_tfidf_weighted():
-        Calls create_glove_embeddings_tfidf_weighted method from generator.py
-    create_tfidf_feature(path_collection: str = 'data/embeddings/tfidf_collection_embeddings.pkl', path_query: str = 'data/embeddings/tfidf_query_embeddings.pkl'):
-        Calls create_tfidf_feature method from generator.py
-    create_bert_feature(path_collection: str = 'data/embeddings/bert_collection_embeddings.pkl', path_query: str = 'data/embeddings/bert_query_embeddings.pkl'):
-        Calls create_bert_feature method from generator.py						
-    create_glove_feature(path_collection: str = 'data/embeddings/glove_collection_embeddings.pkl', path_query: str = 'data/embeddings/glove_query_embeddings.pkl'):
-        Calls create_glove_feature method from generator.py	
-    create_jaccard_feature():
-	    Calls create_jaccard_feature method from generator.py
-    create_sentence_features():
-        Calls create_sentence_features method from generator.py
-    create_interpretation_features():
-        Calls create_interpretation_features method from generator.py
-    create_POS_features():
-        Calls create_POS_features method from generator.py
-    create_BM25_features():
-        Calls create_BM25_features method from generator.py
-    create_test_features():
-	    Creates test features from datasets "queries_test" and "collection"
-    create_val_features():
-	    Creates new DataFrame "create_val_features" from datasets "queries_val" and "collection"
-    evaluate(model: str = 'nb', pca: int = 0, pairwise_model: str = None, pairwise_top_k: int = 50, search_space: list = None, models_path: str = None, store_model_path: str = None):
-	    Evaluates the performance of the model
-    forward_selection(model: str = 'nb', pca: int = 0, search_space: list = None):
-	    Performs forward feature selection to determine best features
-    save(name: str, path: str = 'data/processed'):
-	    Saves created DataFrames as .pkl files
     """
 
     collection = None
