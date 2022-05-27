@@ -98,20 +98,21 @@ class Evaluation(object):
 
         """
         X, y, X_test, test_pair = split_and_scale(X_y_train, X_test, components_pca=components_pca)
-        mrr = self.compute_metrics(model,
-                                   X,
-                                   y,
-                                   X_test,
-                                   test_pair,
-                                   qrels,
-                                   k,
-                                   components_pca,
-                                   pairwise_model,
-                                   pairwise_top_k,
-                                   pairwise_train,
-                                   name=name,
-                                   save_result=save_result)
-        print(f'MRR: {mrr}')
+        performance = self.compute_metrics(model,
+                                           X,
+                                           y,
+                                           X_test,
+                                           test_pair,
+                                           qrels,
+                                           k,
+                                           components_pca,
+                                           pairwise_model,
+                                           pairwise_top_k,
+                                           pairwise_train,
+                                           name=name,
+                                           save_result=save_result)
+        print(f'MRR: {performance[0]}')
+        print(f'nDCG: {performance[1]}')
 
     def hyperparameter_optimization(self, model, search_space,
                                     X_y_train: pd.DataFrame,
@@ -147,7 +148,7 @@ class Evaluation(object):
             save_result (Boolean):
 
         Returns:
-            MRR (float):
+            tuple (float): MRR and nDCG
 
         """
 
@@ -155,7 +156,7 @@ class Evaluation(object):
         def evaluate(**params):
             model.set_params(**params)
             return -1 * self.compute_metrics(model, X, y, X_val, val_pair, qrels_val, k, components_pca, pairwise_model,
-                                             pairwise_top_k, pairwise_train, name=name)
+                                             pairwise_top_k, pairwise_train, name=name)[0]
 
         X, y, X_test, test_pair, X_val, val_pair = split_and_scale(X_y_train, X_test, X_val, components_pca)
         best_result = gp_minimize(evaluate, search_space, n_calls=trials)
@@ -165,10 +166,15 @@ class Evaluation(object):
         best_params_dict = {}
         for space, value in zip(search_space, best_result.x):
             best_params_dict[space.name] = value
-        print(
-            f'MRR on test set: {self.compute_metrics(model.set_params(**best_params_dict), X, y, X_test, test_pair, qrels, k, components_pca, pairwise_model, pairwise_top_k, pairwise_train, name=name, save_result=save_result)}')
+        test_set_performance = self.compute_metrics(model.set_params(**best_params_dict),
+                                                    X, y, X_test, test_pair, qrels,
+                                                    k, components_pca,
+                                                    pairwise_model, pairwise_top_k, pairwise_train,
+                                                    name=name, save_result=save_result)
+        print(f'MRR on test set: {test_set_performance[0]}')
+        print(f'nDCG on test set: {test_set_performance[1]}')
 
-        return best_result.fun
+        return test_set_performance[0]
 
     def feature_selection(self, model,
                           X_y_train: pd.DataFrame,
@@ -189,7 +195,7 @@ class Evaluation(object):
             k (int):
             components_pca (int):
             name (str):
-            save_result (Boolean):
+            save_results (Boolean):
 
         Returns:
             Selected Features (list):
@@ -216,7 +222,7 @@ class Evaluation(object):
                                                    k,
                                                    components_pca,
                                                    name=name,
-                                                   save_result=save_results)
+                                                   save_result=save_results)[1]
                 if performance > current_performance and performance > current_best[1]:
                     current_best = (feature, performance)
             if current_best[0] is not None:
@@ -315,7 +321,7 @@ class Evaluation(object):
                                                     }, index=[0])]).reset_index(drop=True)
             save(self.results, self.previous_results)
 
-        return mrr
+        return mrr, ndcg
 
     def calculate_ranks(self, results: pd.DataFrame):
         """ Calculates ranks.
@@ -436,7 +442,7 @@ class Evaluation(object):
             sum += self.normalized_discounted_cumulative_gain(results[results['qID'] == qID])
         return sum / len(qIDs)
 
-    def mean_reciprocal_rank(self, results: pd.DataFrame):
+    def mean_reciprocal_rank(self, results: pd.DataFrame, threshold: int = 3):
         """ Calculates mean reciprocal rank.
 
         Args:
@@ -451,7 +457,11 @@ class Evaluation(object):
 
         for qID in qIDs:
             ranks = self.calculate_ranks(results[results['qID'] == qID])
+            if len(ranks[ranks['relevant'] >= threshold]) > 0:
+                ranks = ranks[ranks['relevant'] >= threshold]
+            else:
+                ranks = ranks[ranks['relevant'] >= (threshold - 1)]
             ranks = ranks.sort_values('rank', ascending=True).head(1)
-            sum += (1 / ranks['rank'])
+            sum += (1 / float(ranks['rank']))
 
         return sum / len(qIDs)
