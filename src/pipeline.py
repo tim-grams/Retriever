@@ -203,6 +203,10 @@ class Pipeline(object):
 
         """
         self.features = create_w2v_feature(self.features, self.collection, self.queries, path_collection, path_query)
+        self.features_test = create_w2v_feature(self.features_test, self.collection,
+                                                self.queries, path_collection, path_query)
+        self.features_val = create_w2v_feature(self.features_val, self.collection,
+                                               self.queries, path_collection, path_query)
 
         return self
 
@@ -220,7 +224,11 @@ class Pipeline(object):
         """
         self.features = create_w2v_tfidf_feature(self.features, self.collection, self.queries, path_collection,
                                                  path_query)
-
+        self.features_test = create_w2v_tfidf_feature(self.features_test, self.collection, self.queries,
+                                                      path_collection,
+                                                      path_query)
+        self.features_val = create_w2v_tfidf_feature(self.features_val, self.collection, self.queries, path_collection,
+                                                     path_query)
         return self
 
     def create_bert_embeddings(self):
@@ -264,6 +272,10 @@ class Pipeline(object):
 
         """
         self.features = create_tfidf_feature(self.features, self.collection, self.queries, path_collection, path_query)
+        self.features_test = create_tfidf_feature(self.features_test, self.collection,
+                                                  self.queries, path_collection, path_query)
+        self.features_val = create_tfidf_feature(self.features_val, self.collection,
+                                                 self.queries, path_collection, path_query)
 
         return self
 
@@ -280,7 +292,10 @@ class Pipeline(object):
 
         """
         self.features = create_bert_feature(self.features, self.collection, self.queries, path_collection, path_query)
-
+        self.features_test = create_bert_feature(self.features_test, self.collection,
+                                                 self.queries, path_collection, path_query)
+        self.features_val = create_bert_feature(self.features_val, self.collection,
+                                                self.queries, path_collection, path_query)
         return self
 
     def create_glove_feature(self, path_collection: str = 'data/embeddings/glove_collection_embeddings.pkl',
@@ -296,42 +311,56 @@ class Pipeline(object):
 
         """
         self.features = create_glove_feature(self.features, self.collection, self.queries, path_collection, path_query)
+        self.features_test = create_glove_feature(self.features_test, self.collection, self.queries, path_collection, path_query)
+        self.features_val = create_glove_feature(self.features_val, self.collection, self.queries, path_collection, path_query)
 
         return self
 
     def create_jaccard_feature(self):
         """ Creates Jaccard feature. """
         self.features = create_jaccard_feature(self.features, self.collection, self.queries)
+        self.features_test = create_jaccard_feature(self.features_test, self.collection, self.queries)
+        self.features_val = create_jaccard_feature(self.features_val, self.collection, self.queries)
 
         return self
 
     def create_sentence_features(self):
         """ Creates sentence features. """
         self.features = create_sentence_features(self.features, self.collection, self.queries)
+        self.features_test = create_sentence_features(self.features_test, self.collection, self.queries)
+        self.features_val = create_sentence_features(self.features_val, self.collection, self.queries)
 
         return self
 
     def create_interpretation_features(self):
         """ Creates interpretation features. """
         self.features = create_interpretation_features(self.features, self.collection, self.queries)
+        self.features_test = create_interpretation_features(self.features_test, self.collection, self.queries)
+        self.features_val = create_interpretation_features(self.features_val, self.collection, self.queries)
 
         return self
 
     def create_POS_features(self):
         """ Creates POS features. """
         self.features = create_POS_features(self.features, self.collection, self.queries)
+        self.features_test = create_POS_features(self.features_test, self.collection, self.queries)
+        self.features_val = create_POS_features(self.features_val, self.collection, self.queries)
 
         return self
 
     def create_BM25_features(self):
         """ Creates BM25 features. """
         self.features = create_BM2_feature(self.features, self.collection, self.queries)
+        self.features_test = create_BM2_feature(self.features_test, self.collection, self.queries)
+        self.features_val = create_BM2_feature(self.features_val, self.collection, self.queries)
 
         return self
 
     def create_train_features(self):
         """ Creates features for the training data. """
         self.features = create_all(self.features, self.collection, self.queries)
+        self.features_test = create_all(self.features_test, self.collection, self.queries)
+        self.features_val = create_all(self.features_val, self.collection, self.queries)
 
         return self
 
