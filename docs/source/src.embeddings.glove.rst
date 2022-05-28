@@ -1,4 +1,4 @@
-Embeddings
+Glove
 ========
 
 Used to generate Glove features for queries and documents

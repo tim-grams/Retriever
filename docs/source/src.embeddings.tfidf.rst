@@ -1,4 +1,4 @@
-Embeddings
+TFIDF
 ========
 
 Used to generate TF/IDF features for queries and documents
