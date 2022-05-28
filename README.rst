@@ -44,3 +44,6 @@ The team consists of:
 * `Stefan <https://github.com/StayFN/>`__
 * `Tobias <https://github.com/tobi-b99/>`__
 * `Tim <https://github.com/timg339/>`__
+
+A Bert pairwise model is in progress and can be found in the corresponding branch.
+
